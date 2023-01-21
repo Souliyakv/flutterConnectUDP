@@ -26,16 +26,9 @@ class _CreateUDPState extends State<CreateUDP> {
   final _username = TextEditingController();
   final _password = TextEditingController();
   final _to = TextEditingController();
-  int temp = 0;
   int showImage = 0;
   List<Uint8List> sperate = [];
   late Uint8List _bytes;
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-  }
 
   void login() async {
     RawDatagramSocket.bind(InternetAddress.anyIPv4, 2222)
@@ -88,7 +81,6 @@ class _CreateUDPState extends State<CreateUDP> {
           if (json.decode(data)['total'].toString() ==
               json.decode(data)['round'].toString()) {
             List<dynamic> newList = [];
-            var a = [];
 
             for (int i = 0; i < dataArr.length; i++) {
               newList.addAll(jsonDecode(dataArr[i]));

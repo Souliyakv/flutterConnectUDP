@@ -18,8 +18,6 @@ class _CreateUDPState extends State<CreateUDP> {
   late Uint8List imagebytes = new Uint8List(0);
   var imageFireResult;
   File? file;
-  var allBuffer;
-  late String base64Image = '';
   String data = '';
   late String message;
   List<String> dataArr = [];
@@ -28,20 +26,10 @@ class _CreateUDPState extends State<CreateUDP> {
   final _username = TextEditingController();
   final _password = TextEditingController();
   final _to = TextEditingController();
-  List<List<int>> chunk = <List<int>>[];
   int temp = 0;
-  XFile? _image;
-  var arrayBuffer;
   int showImage = 0;
-
-  List<dynamic> test = [];
-  List<int> myList = [];
-  List<String> tetsData = [];
   List<Uint8List> sperate = [];
-  List<int> sperateList = [];
   late Uint8List _bytes;
-
-  List<int> arr = [];
 
   @override
   void initState() {
@@ -64,8 +52,6 @@ class _CreateUDPState extends State<CreateUDP> {
         "data": {"userName": _username.text, "password": _password.text},
         "command": "login",
       };
-      // var login = '{"data":{"userName":"a","password": "a"},"command":""login}';
-      // Send a UDP packet
       socket.send(utf8.encode(jsonEncode(login)),
           InternetAddress('192.168.0.131'), 2222);
     });
@@ -95,9 +81,6 @@ class _CreateUDPState extends State<CreateUDP> {
           } else {
             setState(() {
               message = json.decode(data)['message'].toString();
-
-              // data = utf8.decode(result);
-              // String a = message.split(' ')[0];
 
               dataArr.add(message);
             });
@@ -153,98 +136,8 @@ class _CreateUDPState extends State<CreateUDP> {
           timer.cancel();
         }
       });
-      // for (var i = 0; i < sperate.length; i++) {
-      //   var data = {
-      //     "data": {
-      //       "message": sperate[i],
-      //       "channel": _to.text,
-      //       "type": i,
-      //       "total": sperate.length,
-      //       "round": i,
-      //       "sumData": ''
-      //     },
-      //     "token": _username.text,
-      //     "command": "send"
-      //   };
-      //   socket.send(utf8.encode(jsonEncode(data)),
-      //       InternetAddress('192.168.0.131'), 2222);
-      // }
-
-      // _testText.text = sperate.toString();
-      // print(sperate);
-
-      // for (int i = 0; i < sperate.length; i++) {
-      //   print(sperate[i]);
-      //   var data = {
-      //     "data": {
-      //       "message": sperate[i],
-      //       "channel": _to.text,
-      //       "type": "IMAGE",
-      //       "total": sperate.length,
-      //       "round": i,
-      //       "sumData": ''
-      //     },
-      //     "token": _username.text,
-      //     "command": "send"
-      //   };
-
-      //   socket.send(utf8.encode(jsonEncode(data)),
-      //       InternetAddress('192.168.0.131'), 2222);
-      // }
-
-      // Timer.periodic(new Duration(seconds: 1), (timer) {
-      //   // print('hello world! ' + timer.tick.toString());
-      // });
-      // print(sperate);
-
-      // _testText.text = sperate.toString();
-
-      // print(chunk.length);
-      // Timer.periodic(new Duration(seconds: 1), (timer) {
-      //   // print('hello world! ' + timer.tick.toString());
-      // });
-
-      // const trans = '123456';
-      // for (var i = 0; i < chunk.length; i++) {
-      //   var data = {
-      //     "data": {
-      //       "message": chunk[i],
-      //       "channel": _to.text,
-      //       "type": "IMAGE",
-      //       "total": chunk.length,
-      //       "round": i,
-      //       "sumData": ''
-      //     },
-      //     "token": _username.text,
-      //     "command": "send"
-      //   };
-
-      // var login = '{"data":{"userName":"a","password": "a"},"command":""login}';
-      // Send a UDP packet
-      // socket.send(utf8.encode(jsonEncode(data)),
-      // InternetAddress('192.168.0.131'), 2222);
-      // }
     });
   }
-
-  // Future chooseImage(BuildContext context) async {
-  //   try {
-  //     var image = await ImagePicker().pickImage(source: ImageSource.gallery);
-  //     setState(() {
-  //       _image = image;
-  //     });
-  //     int chunkSize = 10000;
-  //     var result = await _image!.readAsBytes();
-  //     allBuffer = result;
-  //     chunk.clear();
-  //     for (int i = 0; i < result.length; i += chunkSize) {
-  //       int end = i + chunkSize < result.length ? i + chunkSize : result.length;
-  //       chunk.add(result.sublist(i, end));
-  //     }
-  //   } catch (e) {
-  //     print('error is ' + e.toString());
-  //   }
-  // }
 
   Future chooseImage(BuildContext context) async {
     try {
@@ -307,18 +200,10 @@ class _CreateUDPState extends State<CreateUDP> {
                     fit: BoxFit.cover,
                   ),
                 ),
-
           SizedBox(height: 20),
           TextField(
             controller: _testText,
           ),
-          // TextFormField(
-          //   initialValue: base64Image,
-          // ),
-          // Expanded
-          //     child: SingleChildScrollView(
-          //   child: Text(_data),
-          // )),
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(

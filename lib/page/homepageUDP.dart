@@ -30,36 +30,16 @@ class _CreateUDPState extends State<CreateUDP> {
   List<Uint8List> sperate = [];
   late Uint8List _bytes;
   List<int> Check = [];
-
+ late RawDatagramSocket socket;
   void login() async {
     RawDatagramSocket.bind(InternetAddress.anyIPv4, 2222)
         .then((RawDatagramSocket socket) {
       // Set the handler for receiving data
-      socket.listen((RawSocketEvent event) {
+      this.socket=socket;
+        this.socket.listen((RawSocketEvent event) {
         if (event == RawSocketEvent.read) {
           // Read the data
-          Datagram? dg = socket.receive();
-          print('Received ${dg!.data} from ${dg.address}:${dg.port}');
-        }
-      });
-      var login = {
-        "data": {"userName": _username.text, "password": _password.text},
-        "command": "login",
-      };
-      socket.send(utf8.encode(jsonEncode(login)),
-          InternetAddress('192.168.0.131'), 2222);
-    });
-  }
-
-  void sendMessage() async {
-    // int count = 0;
-    RawDatagramSocket.bind(InternetAddress.anyIPv4, 2222)
-        .then((RawDatagramSocket socket) {
-      // Set the handler for receiving data
-      socket.listen((RawSocketEvent event) {
-        if (event == RawSocketEvent.read) {
-          // Read the data
-          Datagram? dg = socket.receive();
+          Datagram? dg = this.socket.receive();
           List<int> result = dg!.data;
           data = utf8.decode(result);
           // print('channel is :' + json.decode(data)['channel'].toString());
@@ -106,12 +86,91 @@ class _CreateUDPState extends State<CreateUDP> {
           }
         }
       });
+          var login = {
+        "data": {"userName": _username.text, "password": _password.text},
+        "command": "login",
+      };
+      this.socket.send(utf8.encode(jsonEncode(login)),
+          InternetAddress('192.168.1.108'), 2222);
+      // this.socket.listen((RawSocketEvent event) {
+      //   if (event == RawSocketEvent.read) {
+      //     // Read the data
+      //     Datagram? dg = socket.receive();
+      //     print('Received ${dg!.data} from ${dg.address}:${dg.port}');
+      //   }
+      // });
+      // var login = {
+      //   "data": {"userName": _username.text, "password": _password.text},
+      //   "command": "login",
+      // };
+      // this.socket.send(utf8.encode(jsonEncode(login)),
+      //     InternetAddress('192.168.1.108'), 2222);
+    });
+    
+  }
 
+  void sendMessage() async {
+    // int count = 0;
+    // RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 2222)
+    //     .then((RawDatagramSocket socket) {
+      // Set the handler for receiving data
+      // this.socket.listen((RawSocketEvent event) {
+      //   if (event == RawSocketEvent.read) {
+      //     // Read the data
+      //     Datagram? dg = this.socket.receive();
+      //     List<int> result = dg!.data;
+      //     data = utf8.decode(result);
+      //     // print('channel is :' + json.decode(data)['channel'].toString());
+      //     // print('type is :' + json.decode(data)['type'].toString());
+      //     // print('total is :' + json.decode(data)['total'].toString());
+      //     // print('round is :' + json.decode(data)['round'].toString());
+      //     if (json.decode(data)['round'] == 1) {
+      //       Check.clear();
+      //       dataArr.clear();
+      //       setState(() {
+      //         message = json.decode(data)['message'].toString();
+      //         dataArr.add(message);
+      //         Check.add(json.decode(data)['round']);
+      //       });
+      //     } else {
+      //       setState(() {
+      //         message = json.decode(data)['message'].toString();
+      //         dataArr.add(message);
+      //         Check.add(json.decode(data)['round']);
+      //       });
+      //     }
+      //     if (json.decode(data)['total'].toString() ==
+      //         json.decode(data)['round'].toString()) {
+      //       if (json.decode(data)['total'] == Check.length) {
+      //         List<dynamic> newList = [];
+
+      //         for (int i = 0; i < dataArr.length; i++) {
+      //           newList.addAll(jsonDecode(dataArr[i]));
+      //         }
+      //         setState(() {
+      //           String base64string = base64.encode(newList.cast<int>());
+      //           imageFireResult = "data:image/jpg;base64,$base64string";
+      //           String uri = imageFireResult.toString();
+      //           _bytes = base64.decode(uri.split(',').last);
+      //           _testText.text = imageFireResult;
+      //           showImage = 1;
+      //         });
+      //         print(json.decode(data)['total'].toString());
+      //         print(Check.length);
+      //         print(Check);
+      //       } else {
+      //         print('error');
+      //       }
+      //     }
+      //   }
+      // });
+print('object');
       Timer.periodic(new Duration(milliseconds: 200), (timer) {
         int index = int.parse(timer.tick.toString());
         index = index - 1;
         if (index < sperate.length) {
           var data = {
+            'trans':'12345',
             "data": {
               "message": sperate[index],
               "channel": _to.text,
@@ -123,15 +182,16 @@ class _CreateUDPState extends State<CreateUDP> {
             "token": _username.text,
             "command": "send"
           };
-          socket.send(utf8.encode(jsonEncode(data)),
-              InternetAddress('192.168.0.131'), 2222);
-          // print('hello' + timer.tick.toString());
+          print(this.socket);
+          this.socket.send(utf8.encode(jsonEncode(data)),
+              InternetAddress('192.168.1.108'), 2222);
+           print('hello' + timer.tick.toString());
         } else {
           sperate = [];
           timer.cancel();
         }
       });
-    });
+    // });
   }
 
   Future chooseImage(BuildContext context) async {
@@ -140,7 +200,7 @@ class _CreateUDPState extends State<CreateUDP> {
       file = File(image!.path);
       imagebytes = await file!.readAsBytes();
 
-      int chunkSize = 10000;
+      int chunkSize = 2500;
       for (int i = 0; i < imagebytes.length; i += chunkSize) {
         int end = i + chunkSize < imagebytes.length
             ? i + chunkSize
@@ -161,6 +221,19 @@ class _CreateUDPState extends State<CreateUDP> {
       appBar: AppBar(actions: [
         IconButton(
             onPressed: () {
+              List<dynamic> newList = [];
+
+              for (int i = 0; i < dataArr.length; i++) {
+                newList.addAll(jsonDecode(dataArr[i]));
+              }
+              setState(() {
+                String base64string = base64.encode(newList.cast<int>());
+                imageFireResult = "data:image/jpg;base64,$base64string";
+                String uri = imageFireResult.toString();
+                _bytes = base64.decode(uri.split(',').last);
+                _testText.text = imageFireResult;
+                showImage = 1;
+              });
               // List<dynamic> newList = [];
               // var a = [];
 

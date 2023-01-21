@@ -29,6 +29,7 @@ class _CreateUDPState extends State<CreateUDP> {
   int showImage = 0;
   List<Uint8List> sperate = [];
   late Uint8List _bytes;
+  List<int> Check = [];
 
   void login() async {
     RawDatagramSocket.bind(InternetAddress.anyIPv4, 2222)
@@ -51,7 +52,7 @@ class _CreateUDPState extends State<CreateUDP> {
   }
 
   void sendMessage() async {
-    int count = 0;
+    // int count = 0;
     RawDatagramSocket.bind(InternetAddress.anyIPv4, 2222)
         .then((RawDatagramSocket socket) {
       // Set the handler for receiving data
@@ -66,33 +67,42 @@ class _CreateUDPState extends State<CreateUDP> {
           // print('total is :' + json.decode(data)['total'].toString());
           // print('round is :' + json.decode(data)['round'].toString());
           if (json.decode(data)['round'] == 1) {
+            Check.clear();
             dataArr.clear();
             setState(() {
               message = json.decode(data)['message'].toString();
               dataArr.add(message);
+              Check.add(json.decode(data)['round']);
             });
           } else {
             setState(() {
               message = json.decode(data)['message'].toString();
-
               dataArr.add(message);
+              Check.add(json.decode(data)['round']);
             });
           }
           if (json.decode(data)['total'].toString() ==
               json.decode(data)['round'].toString()) {
-            List<dynamic> newList = [];
+            if (json.decode(data)['total'] == Check.length) {
+              List<dynamic> newList = [];
 
-            for (int i = 0; i < dataArr.length; i++) {
-              newList.addAll(jsonDecode(dataArr[i]));
+              for (int i = 0; i < dataArr.length; i++) {
+                newList.addAll(jsonDecode(dataArr[i]));
+              }
+              setState(() {
+                String base64string = base64.encode(newList.cast<int>());
+                imageFireResult = "data:image/jpg;base64,$base64string";
+                String uri = imageFireResult.toString();
+                _bytes = base64.decode(uri.split(',').last);
+                _testText.text = imageFireResult;
+                showImage = 1;
+              });
+              print(json.decode(data)['total'].toString());
+              print(Check.length);
+              print(Check);
+            } else {
+              print('error');
             }
-            setState(() {
-              String base64string = base64.encode(newList.cast<int>());
-              imageFireResult = "data:image/jpg;base64,$base64string";
-              String uri = imageFireResult.toString();
-              _bytes = base64.decode(uri.split(',').last);
-              _testText.text = imageFireResult;
-              showImage = 1;
-            });
           }
         }
       });
@@ -100,13 +110,6 @@ class _CreateUDPState extends State<CreateUDP> {
       Timer.periodic(new Duration(milliseconds: 200), (timer) {
         int index = int.parse(timer.tick.toString());
         index = index - 1;
-        print('left' +
-            index.toString() +
-            ' right' +
-            (index).toString() +
-            'all' +
-            sperate.length.toString());
-        // print(sperate[index].toString());
         if (index < sperate.length) {
           var data = {
             "data": {
@@ -136,6 +139,7 @@ class _CreateUDPState extends State<CreateUDP> {
       var image = await ImagePicker().getImage(source: ImageSource.gallery);
       file = File(image!.path);
       imagebytes = await file!.readAsBytes();
+
       int chunkSize = 10000;
       for (int i = 0; i < imagebytes.length; i += chunkSize) {
         int end = i + chunkSize < imagebytes.length
@@ -145,6 +149,7 @@ class _CreateUDPState extends State<CreateUDP> {
         sperate.add(imagebytes.sublist(i, end));
       }
       _testText.text = sperate.length.toString();
+      print(file);
     } catch (e) {
       print(e);
     }

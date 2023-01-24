@@ -40,6 +40,7 @@ dependencies:
   tcp_socket_connection: ^0.3.1
   image_picker: ^0.8.6
   image: ^4.0.10
+  percent_indicator: ^4.2.2
 
 dev_dependencies:
   flutter_test:

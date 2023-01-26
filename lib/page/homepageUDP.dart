@@ -33,12 +33,14 @@ class _CreateUDPState extends State<CreateUDP> {
   int resendIndex = 0;
   late Timer timeOut;
   List<int> dataListRefund = [];
+  var address;
+  var port;
 
   List<Uint8List> sperate = [];
   late Uint8List _bytes;
   late RawDatagramSocket socket;
   void login() async {
-    RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 2222)
+    RawDatagramSocket.bind(InternetAddress.anyIPv4, 2222)
         .then((RawDatagramSocket socket) {
       // Set the handler for receiving data
       this.socket = socket;
@@ -56,7 +58,7 @@ class _CreateUDPState extends State<CreateUDP> {
           } else if (json.decode(data)['command'] == 'refund') {
             _sendRefunData(data);
           } else if (json.decode(data)['command'] == 'resend') {
-            _resendData();
+            _resendData(data);
           } else if (json.decode(data)['command'] == 'ackResend') {
             resend();
           } else {
@@ -111,22 +113,29 @@ class _CreateUDPState extends State<CreateUDP> {
           "type": "IMAGE",
           "total": dataListRefund.length,
           "round": resendIndex + 1,
-          "sumData": sperate[dataListRefund[resendIndex]].length
+          "index": dataListRefund[resendIndex],
+          "sumData": sperate[dataListRefund[resendIndex]].length,
+          "address": address,
+          "port": port
         },
         "token": _username.text,
         "command": "resend"
       };
       this.socket.send(utf8.encode(jsonEncode(dataResend)),
           InternetAddress('192.168.1.109'), 2222);
-          setState(() {
-            resendIndex++;
-          });
+      setState(() {
+        resendIndex++;
+      });
     } else {
       print('resendSuccess');
     }
   }
 
   void _sendRefunData(String dataRefund) {
+    setState(() {
+      address = json.decode(dataRefund)['address'];
+      port = json.decode(dataRefund)['port'];
+    });
     dataListRefund.clear();
     dataListRefund = [...json.decode(dataRefund)['message']];
     setState(() {
@@ -135,8 +144,32 @@ class _CreateUDPState extends State<CreateUDP> {
     resend();
   }
 
-  void _resendData() {
-    print('resendData');
+  void _resendData(String dataResend) {
+    int index = json.decode(dataResend)['index'];
+    // print('index Delete:' + index.toString());
+    // print("index" + json.decode(dataResend)['index'].toString());
+    if (json.decode(dataResend)['round'] == 1) {
+      waitTimeOutToCheck();
+      setState(() {
+        showImage = 0;
+        message = json.decode(dataResend)['message'].toString();
+        // dataArr.add(message);
+        dataArr.insert(index, message);
+      });
+      _removeDataToCheck(json.decode(dataResend)['index']);
+    } else {
+      _removeDataToCheck(json.decode(dataResend)['index']);
+      setState(() {
+        message = json.decode(dataResend)['message'].toString();
+        // dataArr.add(message);
+        dataArr.insert(index, message);
+      });
+    }
+    if (json.decode(dataResend)['round'] == json.decode(dataResend)['total']) {
+      _convertToImage();
+    } else {
+      print('checkTime');
+    }
   }
 
   Future chooseImage(BuildContext context) async {
@@ -198,6 +231,7 @@ class _CreateUDPState extends State<CreateUDP> {
       _addDataToCheck(json.decode(dataBuffer)['total']);
       _removeDataToCheck(1);
       setState(() {
+        percent = 0;
         message = json.decode(dataBuffer)['message'].toString();
         dataArr.add(message);
       });

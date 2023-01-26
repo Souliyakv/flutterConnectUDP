@@ -22,7 +22,7 @@ class _CreateUDPState extends State<CreateUDP> {
   String data = '';
   late String message;
   List<String> dataArr = [];
-
+  List<int> missing = [];
   final _textController = TextEditingController();
   final _username = TextEditingController();
   final _password = TextEditingController();
@@ -30,10 +30,12 @@ class _CreateUDPState extends State<CreateUDP> {
   int showImage = 0;
   double percent = 0;
   int sendIndex = 0;
+  int resendIndex = 0;
+  late Timer timeOut;
+  List<int> dataListRefund = [];
 
   List<Uint8List> sperate = [];
   late Uint8List _bytes;
-  List<int> Check = [];
   late RawDatagramSocket socket;
   void login() async {
     RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 2222)
@@ -45,12 +47,20 @@ class _CreateUDPState extends State<CreateUDP> {
           // Read the data
           Datagram? dg = this.socket.receive();
           List<int> result = dg!.data;
-          data = utf8.decode(result);
-          // print(json.decode(data)['command']);
+          setState(() {
+            data = utf8.decode(result);
+          });
+          print(json.decode(data)['command']);
           if (json.decode(data)['command'] == "ack") {
             sendMessage();
+          } else if (json.decode(data)['command'] == 'refund') {
+            _sendRefunData(data);
+          } else if (json.decode(data)['command'] == 'resend') {
+            _resendData();
+          } else if (json.decode(data)['command'] == 'ackResend') {
+            resend();
           } else {
-            _pushButterToImage();
+            _pushButterToImage(data);
           }
         }
       });
@@ -59,65 +69,75 @@ class _CreateUDPState extends State<CreateUDP> {
         "command": "login",
       };
       this.socket.send(utf8.encode(jsonEncode(login)),
-          InternetAddress('192.168.3.81'), 2222);
+          InternetAddress('192.168.1.109'), 2222);
     });
   }
 
-  void sendMessage(){
-    if(sendIndex != sperate.length){
-      print(sperate[sendIndex].length);
-        var data = {
-          'trans': '12345',
-          "data": {
-            "message": sperate[sendIndex],
-            "channel": _to.text,
-            "type": "IMAGE",
-            "total": sperate.length,
-            "round": sendIndex + 1,
-            "sumData": sperate[sendIndex].length
-          },
-          "token": _username.text,
-          "command": "send"
-        };
-        this.socket.send(utf8.encode(jsonEncode(data)),
-            InternetAddress('192.168.3.81'), 2222);
-            setState(() {
-              sendIndex++;
-            });
-    }else{
+  void sendMessage() {
+    if (sendIndex != sperate.length) {
+      // print(sperate[sendIndex].length);
+      // print(sendIndex);
+      var data = {
+        'trans': '12345',
+        "data": {
+          "message": sperate[sendIndex],
+          "channel": _to.text,
+          "type": "IMAGE",
+          "total": sperate.length,
+          "round": sendIndex + 1,
+          "sumData": sperate[sendIndex].length
+        },
+        "token": _username.text,
+        "command": "send"
+      };
+      this.socket.send(utf8.encode(jsonEncode(data)),
+          InternetAddress('192.168.1.109'), 2222);
+      setState(() {
+        sendIndex++;
+      });
+    } else {
       print("Success");
+      // sperate.clear();
     }
-  
   }
 
-  // void sendMessage() async {
-  //   Timer.periodic(new Duration(milliseconds: 150), (timer) {
-  //     int index = int.parse(timer.tick.toString());
-  //     index = index - 1;
-  //     if (index < sperate.length) {
-  //       var data = {
-  //         'trans': '12345',
-  //         "data": {
-  //           "message": sperate[index],
-  //           "channel": _to.text,
-  //           "type": "IMAGE",
-  //           "total": sperate.length,
-  //           "round": index + 1,
-  //           "sumData": ''
-  //         },
-  //         "token": _username.text,
-  //         "command": "send"
-  //       };
-  //       this.socket.send(utf8.encode(jsonEncode(data)),
-  //           InternetAddress('192.168.3.81'), 2222);
-  //       //  print('hello' + timer.tick.toString());
-  //     } else {
-  //       sperate = [];
-  //       timer.cancel();
-  //     }
-  //   });
-  //   // });
-  // }
+  void resend() {
+    if (resendIndex != dataListRefund.length) {
+      var dataResend = {
+        'trans': '12345',
+        "data": {
+          "message": sperate[dataListRefund[resendIndex]],
+          "channel": _to.text,
+          "type": "IMAGE",
+          "total": dataListRefund.length,
+          "round": resendIndex + 1,
+          "sumData": sperate[dataListRefund[resendIndex]].length
+        },
+        "token": _username.text,
+        "command": "resend"
+      };
+      this.socket.send(utf8.encode(jsonEncode(dataResend)),
+          InternetAddress('192.168.1.109'), 2222);
+          setState(() {
+            resendIndex++;
+          });
+    } else {
+      print('resendSuccess');
+    }
+  }
+
+  void _sendRefunData(String dataRefund) {
+    dataListRefund.clear();
+    dataListRefund = [...json.decode(dataRefund)['message']];
+    setState(() {
+      resendIndex = 0;
+    });
+    resend();
+  }
+
+  void _resendData() {
+    print('resendData');
+  }
 
   Future chooseImage(BuildContext context) async {
     try {
@@ -134,68 +154,139 @@ class _CreateUDPState extends State<CreateUDP> {
         sperate.add(imagebytes.sublist(i, end));
       }
       _testText.text = sperate.length.toString();
-      print(file);
+      // print(sperate);
+      // print(sperate.length);
     } catch (e) {
       print(e);
     }
   }
 
   void _convertToImage() {
+    timeOut.cancel();
     List<dynamic> newList = [];
 
-    for (int i = 0; i < dataArr.length; i++) {
-      newList.addAll(jsonDecode(dataArr[i]));
+    if (missing == null || missing.length == 0) {
+      for (int i = 0; i < dataArr.length; i++) {
+        newList.addAll(jsonDecode(dataArr[i]));
+      }
+      setState(() {
+        String base64string = base64.encode(newList.cast<int>());
+        imageFireResult = "data:image/jpg;base64,$base64string";
+        String uri = imageFireResult.toString();
+        _bytes = base64.decode(uri.split(',').last);
+        _testText.text = imageFireResult;
+        showImage = 1;
+      });
+    } else {
+      _refundData();
     }
-    setState(() {
-      String base64string = base64.encode(newList.cast<int>());
-      imageFireResult = "data:image/jpg;base64,$base64string";
-      String uri = imageFireResult.toString();
-      _bytes = base64.decode(uri.split(',').last);
-      _testText.text = imageFireResult;
-      showImage = 1;
-    });
+
+    // print(newList.runtimeType);
+    // print(newList.length);
     // print(json.decode(data)['total'].toString());
     // print(Check.length);
     // print(Check);
   }
 
-  void _pushButterToImage() {
-    if (json.decode(data)['round'] == 1) {
-      Check.clear();
+  void _pushButterToImage(String dataBuffer) {
+    // print(json.decode(dataBuffer)['message']);
+    if (json.decode(dataBuffer)['round'] == 1) {
+      waitTimeOutToCheck();
+
       dataArr.clear();
+      missing.clear();
+      _addDataToCheck(json.decode(dataBuffer)['total']);
+      _removeDataToCheck(1);
       setState(() {
-        message = json.decode(data)['message'].toString();
+        message = json.decode(dataBuffer)['message'].toString();
         dataArr.add(message);
-        Check.add(json.decode(data)['round']);
       });
-      print(json.decode(data)['round']);
     } else {
+      _removeDataToCheck(json.decode(dataBuffer)['round']);
       setState(() {
-        double round = double.parse(json.decode(data)['round'].toString());
-        double numtotal = double.parse(json.decode(data)['total'].toString());
+        double round =
+            double.parse(json.decode(dataBuffer)['round'].toString());
+        double numtotal =
+            double.parse(json.decode(dataBuffer)['total'].toString());
         percent = round / numtotal;
 
-        message = json.decode(data)['message'].toString();
+        message = json.decode(dataBuffer)['message'].toString();
         dataArr.add(message);
-        Check.add(json.decode(data)['round']);
       });
-         print(json.decode(data)['round']);
     }
-    if (json.decode(data)['total'].toString() ==
-        json.decode(data)['round'].toString()) {
-      if (json.decode(data)['total'] == Check.length) {
-        _convertToImage();
-      } else {
-        print('error');
-        _convertToImage();
-      }
+    print('round' + json.decode(dataBuffer)['round'].toString());
+    print('total' + json.decode(dataBuffer)['total'].toString());
+
+    // _convertToImage();
+    if (json.decode(dataBuffer)['round'] == json.decode(dataBuffer)['total']) {
+      _convertToImage();
+    } else {
+      print('checkTime');
     }
+  }
+
+  Future<void> waitTimeOutToCheck() async {
+    timeOut = Timer(Duration(seconds: 5), () {
+      print('PrinttimeOut');
+      _convertToImage();
+    });
+
+    // and later, before the timer goes off...
+    // t.cancel();
+  }
+
+  void _addDataToCheck(int number) {
+    for (var i = 0; i < number; i++) {
+      missing.add(i + 1);
+    }
+  }
+
+  void _removeDataToCheck(int number) {
+    missing.remove(number);
+  }
+
+  void _refundData() {
+    var dataRefund = {
+      'trans': '12345',
+      "data": {
+        "message": missing,
+        "channel": _to.text,
+        "type": "IMAGE",
+        "total": 1,
+        "round": 1,
+        "sumData": missing.length,
+        "address": json.decode(data)['address'],
+        "port": json.decode(data)['port']
+      },
+      "token": _username.text,
+      "command": "refund"
+    };
+    print('refund');
+    this.socket.send(utf8.encode(jsonEncode(dataRefund)),
+        InternetAddress('192.168.1.109'), 2222);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(actions: [
+        IconButton(
+            onPressed: () {
+              timeOut.cancel();
+            },
+            icon: Icon(Icons.cancel)),
+        IconButton(
+            onPressed: () {
+              print('object');
+              waitTimeOutToCheck();
+            },
+            icon: Icon(Icons.history)),
+        IconButton(
+            onPressed: () {
+              // _removeDataToCheck();
+              _refundData();
+            },
+            icon: Icon(Icons.check)),
         IconButton(
             onPressed: () {
               List<dynamic> newList = [];

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:demoudp/widget/config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -40,7 +41,7 @@ class _CreateUDPState extends State<CreateUDP> {
   late Uint8List _bytes;
   late RawDatagramSocket socket;
   void login() async {
-    RawDatagramSocket.bind(InternetAddress.anyIPv4, 2222)
+    RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 2222)
         .then((RawDatagramSocket socket) {
       // Set the handler for receiving data
       this.socket = socket;
@@ -71,7 +72,7 @@ class _CreateUDPState extends State<CreateUDP> {
         "command": "login",
       };
       this.socket.send(utf8.encode(jsonEncode(login)),
-          InternetAddress('192.168.1.109'), 2222);
+          InternetAddress("${IpAddress().ipAddress}"), 2222);
     });
   }
 
@@ -93,7 +94,7 @@ class _CreateUDPState extends State<CreateUDP> {
         "command": "send"
       };
       this.socket.send(utf8.encode(jsonEncode(data)),
-          InternetAddress('192.168.1.109'), 2222);
+          InternetAddress("${IpAddress().ipAddress}"), 2222);
       setState(() {
         sendIndex++;
       });
@@ -108,12 +109,12 @@ class _CreateUDPState extends State<CreateUDP> {
       var dataResend = {
         'trans': '12345',
         "data": {
-          "message": sperate[dataListRefund[resendIndex]],
+          "message": sperate[dataListRefund[resendIndex] -1],
           "channel": _to.text,
           "type": "IMAGE",
           "total": dataListRefund.length,
           "round": resendIndex + 1,
-          "index": dataListRefund[resendIndex],
+          "index": dataListRefund[resendIndex] -1,
           "sumData": sperate[dataListRefund[resendIndex]].length,
           "address": address,
           "port": port
@@ -122,7 +123,7 @@ class _CreateUDPState extends State<CreateUDP> {
         "command": "resend"
       };
       this.socket.send(utf8.encode(jsonEncode(dataResend)),
-          InternetAddress('192.168.1.109'), 2222);
+          InternetAddress("${IpAddress().ipAddress}"), 2222);
       setState(() {
         resendIndex++;
       });
@@ -150,20 +151,24 @@ class _CreateUDPState extends State<CreateUDP> {
     // print("index" + json.decode(dataResend)['index'].toString());
     if (json.decode(dataResend)['round'] == 1) {
       waitTimeOutToCheck();
-      setState(() {
-        showImage = 0;
-        message = json.decode(dataResend)['message'].toString();
-        // dataArr.add(message);
-        dataArr.insert(index, message);
-      });
-      _removeDataToCheck(json.decode(dataResend)['index']);
+      var resultRemove = _removeDataToCheck(json.decode(dataResend)['index']);
+      if (resultRemove == true) {
+        setState(() {
+          showImage = 0;
+          message = json.decode(dataResend)['message'].toString();
+          // dataArr.add(message);
+          dataArr.insert(index, message);
+        });
+      }
     } else {
-      _removeDataToCheck(json.decode(dataResend)['index']);
-      setState(() {
-        message = json.decode(dataResend)['message'].toString();
-        // dataArr.add(message);
-        dataArr.insert(index, message);
-      });
+      var resultRemove = _removeDataToCheck(json.decode(dataResend)['index']);
+      if (resultRemove == true) {
+        setState(() {
+          message = json.decode(dataResend)['message'].toString();
+          // dataArr.add(message);
+          dataArr.insert(index, message);
+        });
+      }
     }
     if (json.decode(dataResend)['round'] == json.decode(dataResend)['total']) {
       _convertToImage();
@@ -229,27 +234,29 @@ class _CreateUDPState extends State<CreateUDP> {
       dataArr.clear();
       missing.clear();
       _addDataToCheck(json.decode(dataBuffer)['total']);
-      _removeDataToCheck(1);
-      setState(() {
-        percent = 0;
-        message = json.decode(dataBuffer)['message'].toString();
-        dataArr.add(message);
-      });
+      var resultRemove = _removeDataToCheck(1);
+      if (resultRemove == true) {
+        setState(() {
+          percent = 0;
+          message = json.decode(dataBuffer)['message'].toString();
+          dataArr.add(message);
+        });
+      }
     } else {
-      _removeDataToCheck(json.decode(dataBuffer)['round']);
-      setState(() {
-        double round =
-            double.parse(json.decode(dataBuffer)['round'].toString());
-        double numtotal =
-            double.parse(json.decode(dataBuffer)['total'].toString());
-        percent = round / numtotal;
+      var resultRemove = _removeDataToCheck(json.decode(dataBuffer)['round']);
+      if (resultRemove == true) {
+        setState(() {
+          double round =
+              double.parse(json.decode(dataBuffer)['round'].toString());
+          double numtotal =
+              double.parse(json.decode(dataBuffer)['total'].toString());
+          percent = round / numtotal;
 
-        message = json.decode(dataBuffer)['message'].toString();
-        dataArr.add(message);
-      });
+          message = json.decode(dataBuffer)['message'].toString();
+          dataArr.add(message);
+        });
+      }
     }
-    print('round' + json.decode(dataBuffer)['round'].toString());
-    print('total' + json.decode(dataBuffer)['total'].toString());
 
     // _convertToImage();
     if (json.decode(dataBuffer)['round'] == json.decode(dataBuffer)['total']) {
@@ -275,8 +282,9 @@ class _CreateUDPState extends State<CreateUDP> {
     }
   }
 
-  void _removeDataToCheck(int number) {
-    missing.remove(number);
+  _removeDataToCheck(int number) {
+    var result = missing.remove(number);
+    return result;
   }
 
   void _refundData() {
@@ -297,7 +305,7 @@ class _CreateUDPState extends State<CreateUDP> {
     };
     print('refund');
     this.socket.send(utf8.encode(jsonEncode(dataRefund)),
-        InternetAddress('192.168.1.109'), 2222);
+        InternetAddress("${IpAddress().ipAddress}"), 2222);
   }
 
   @override

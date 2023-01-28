@@ -178,7 +178,7 @@ class _CreateUDPState extends State<CreateUDP> {
 
   void _resendData(String dataResend) {
     int index = json.decode(dataResend)['index'];
-    int indexAdd = json.decode(dataResend)['index'] - 1;
+    int indexAdd = json.decode(dataResend)['index'] - 2;
     // print('index Delete:' + index.toString());
     print("index" + indexAdd.toString());
     if (json.decode(dataResend)['message'].length ==

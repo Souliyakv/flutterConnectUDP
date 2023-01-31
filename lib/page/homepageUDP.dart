@@ -24,6 +24,7 @@ class _CreateUDPState extends State<CreateUDP> {
   late String message;
   List<String> dataArr = [];
   List<int> missing = [];
+  List<int> missingIndex = [];
   final _textController = TextEditingController();
   final _username = TextEditingController();
   final _password = TextEditingController();
@@ -38,6 +39,10 @@ class _CreateUDPState extends State<CreateUDP> {
   var port;
   int totalBuffer = 0;
   int totalBufferTo = 0;
+  late int total;
+  late int totalToCheck;
+  int _start = 0;
+  int _end = 100;
 
   List<Uint8List> sperate = [];
   late Uint8List _bytes;
@@ -64,8 +69,17 @@ class _CreateUDPState extends State<CreateUDP> {
             _resendData(data);
           } else if (json.decode(data)['command'] == 'ackResend') {
             resend();
+          } else if (json.decode(data)['command'] == 'sendTotal') {
+            _sendTotal();
+          } else if (json.decode(data)['command'] == 'confirmToSend') {
+            setState(() {
+              sendIndex = 0;
+            });
+            sendMessage();
           } else {
             _pushButterToImage(data);
+            // print(json.decode(data)['message']);
+            // _confirmToSend();
           }
         }
       });
@@ -78,33 +92,129 @@ class _CreateUDPState extends State<CreateUDP> {
     });
   }
 
+  void send() {
+    var data = {
+      'trans': '1234',
+      'data': {'total': sperate.length, 'channel': _to.text},
+      "token": _username.text,
+      "command": 'sendTotal'
+    };
+    socket.send(utf8.encode(jsonEncode(data)),
+        InternetAddress("${IpAddress().ipAddress}"), 2222);
+  }
+
+  void _sendTotal() {
+    dataArr.clear();
+
+    setState(() {
+      _start = 0;
+      _end = 100;
+      total = json.decode(data)['total'];
+      totalToCheck = json.decode(data)['total'];
+    });
+    if (total <= _end) {
+      setState(() {
+        _end = total;
+      });
+    }
+    _confirmToSend();
+  }
+
+  void _confirmToSend() {
+    missingIndex.clear();
+
+    if (_start >= total) {
+      print('Success1');
+    } else {
+      var dataConfirm = {
+        'trans': '1234',
+        'data': {
+          "start": _start,
+          "end": _end,
+          "address": json.decode(data)['address'],
+          "port": json.decode(data)['port'],
+        },
+        "command": 'confirmToSend'
+      };
+      print('confirm');
+      print(dataConfirm);
+      socket.send(utf8.encode(jsonEncode(dataConfirm)),
+          InternetAddress("${IpAddress().ipAddress}"), 2222);
+
+      int checkEnd = _end + 100;
+      if (checkEnd >= total) {
+        setState(() {
+          _start = _start + 100;
+          _end = total;
+        });
+      } else {
+        setState(() {
+          _start = _start + 100;
+          _end = _end + 100;
+        });
+      }
+    }
+  }
+
   void sendMessage() {
-    if (sendIndex != sperate.length) {
-      // print(sperate[sendIndex].length);
-      // print(sendIndex);
-      var data = {
+    int sendIndexData = json.decode(data)['start'] + sendIndex;
+    print(sendIndexData);
+
+    int total = json.decode(data)['end'] - json.decode(data)['start'];
+    print(data);
+    if (sendIndexData < json.decode(data)['end']) {
+      var dataToSend = {
         'trans': '12345',
         "data": {
-          "message": sperate[sendIndex],
+          "message": sperate[sendIndexData],
           "channel": _to.text,
           "type": "IMAGE",
-          "total": sperate.length,
+          "index": sendIndexData,
+          "total": total,
           "round": sendIndex + 1,
-          "sumData": sperate[sendIndex].length
+          "start": json.decode(data)['start'],
+          "end": json.decode(data)['end'],
+          "sumData": sperate[sendIndexData].length,
+          "address": json.decode(data)['address'],
+          "port": json.decode(data)['port']
         },
-        "token": _username.text,
         "command": "send"
       };
-      this.socket.send(utf8.encode(jsonEncode(data)),
+      this.socket.send(utf8.encode(jsonEncode(dataToSend)),
           InternetAddress("${IpAddress().ipAddress}"), 2222);
       setState(() {
         sendIndex++;
       });
-    } else {
-      print("Success");
-      // sperate.clear();
     }
   }
+
+  // void sendMessage() {
+  //   if (sendIndex != sperate.length) {
+  //     // print(sperate[sendIndex].length);
+  //     // print(sendIndex);
+  //     var data = {
+  //       'trans': '12345',
+  //       "data": {
+  //         "message": sperate[sendIndex],
+  //         "channel": _to.text,
+  //         "type": "IMAGE",
+  //         "total": sperate.length,
+  //         "round": sendIndex + 1,
+  //         "sumData": sperate[sendIndex].length
+  //       },
+  //       "token": _username.text,
+  //       "command": "send"
+  //     };
+  //     this.socket.send(utf8.encode(jsonEncode(data)),
+  //         InternetAddress("${IpAddress().ipAddress}"), 2222);
+  //     setState(() {
+  //       sendIndex++;
+  //     });
+  //   } else {
+  //     print("Success");
+  //     // sperate.clear();
+  //   }
+  // }
 
   // void sendMessage() async {
   //   Timer.periodic(new Duration(milliseconds: 150), (timer) {
@@ -137,7 +247,7 @@ class _CreateUDPState extends State<CreateUDP> {
 
   void resend() {
     if (resendIndex != dataListRefund.length) {
-      int dataIndex = dataListRefund[resendIndex] - 1;
+      int dataIndex = dataListRefund[resendIndex];
       var dataResend = {
         'trans': '12345',
         "data": {
@@ -177,10 +287,9 @@ class _CreateUDPState extends State<CreateUDP> {
   }
 
   void _resendData(String dataResend) {
-    int index = json.decode(dataResend)['index'];
-    int indexAdd = json.decode(dataResend)['index'] - 2;
+    // int index = json.decode(dataResend)['index'];
+    int indexAdd = json.decode(dataResend)['index'] - 1;
     // print('index Delete:' + index.toString());
-    print("index" + indexAdd.toString());
     if (json.decode(dataResend)['message'].length ==
         json.decode(dataResend)['sumData']) {
       if (json.decode(dataResend)['round'] == 1) {
@@ -261,18 +370,22 @@ class _CreateUDPState extends State<CreateUDP> {
     timeOut.cancel();
     List<dynamic> newList = [];
 
-    if (missing == null || missing.length == 0) {
-      for (int i = 0; i < dataArr.length; i++) {
-        newList.addAll(jsonDecode(dataArr[i]));
+    if (missingIndex == null || missingIndex.length == 0) {
+      if (dataArr.length == totalToCheck) {
+        for (int i = 0; i < dataArr.length; i++) {
+          newList.addAll(jsonDecode(dataArr[i]));
+        }
+        setState(() {
+          String base64string = base64.encode(newList.cast<int>());
+          imageFireResult = "data:image/jpg;base64,$base64string";
+          String uri = imageFireResult.toString();
+          _bytes = base64.decode(uri.split(',').last);
+          _testText.text = imageFireResult;
+          showImage = 1;
+        });
+      } else {
+        _confirmToSend();
       }
-      setState(() {
-        String base64string = base64.encode(newList.cast<int>());
-        imageFireResult = "data:image/jpg;base64,$base64string";
-        String uri = imageFireResult.toString();
-        _bytes = base64.decode(uri.split(',').last);
-        _testText.text = imageFireResult;
-        showImage = 1;
-      });
     } else {
       _refundData();
     }
@@ -284,48 +397,90 @@ class _CreateUDPState extends State<CreateUDP> {
     // print(Check);
   }
 
+  // void _pushButterToImage(String dataBuffer) {
+  //   // print(json.decode(dataBuffer)['message']);
+  //   if (json.decode(dataBuffer)['message'].length ==
+  //       json.decode(dataBuffer)['sumData']) {
+  //     if (json.decode(dataBuffer)['round'] == 1) {
+  //       waitTimeOutToCheck();
+  //       dataArr.clear();
+  //       missing.clear();
+  //       _addDataToCheck(json.decode(dataBuffer)['total']);
+  //       var resultRemove = _removeDataToCheck(1);
+  //       if (resultRemove == true) {
+  //         setState(() {
+  //           percent = 0;
+  //           message = json.decode(dataBuffer)['message'].toString();
+  //           dataArr.add(message);
+  //         });
+  //       }
+  //     } else {
+  //       var resultRemove = _removeDataToCheck(json.decode(dataBuffer)['round']);
+  //       if (resultRemove == true) {
+  //         setState(() {
+  //           double round =
+  //               double.parse(json.decode(dataBuffer)['round'].toString());
+  //           double numtotal =
+  //               double.parse(json.decode(dataBuffer)['total'].toString());
+  //           percent = round / numtotal;
+  //           message = json.decode(dataBuffer)['message'].toString();
+  //           dataArr.add(message);
+  //         });
+  //       }
+  //     }
+  //     // _convertToImage();
+  //     if (json.decode(dataBuffer)['round'] ==
+  //         json.decode(dataBuffer)['total']) {
+  //       _convertToImage();
+  //     } else {
+  //       print('checkTime');
+  //     }
+  //   } else {
+  //     print("NO");
+  //   }
+  // }
+
   void _pushButterToImage(String dataBuffer) {
-    // print(json.decode(dataBuffer)['message']);
+    // print(json.decode(dataBuffer)['round']);
+    // print(json.decode(dataBuffer)['message'].runtimeType);
     if (json.decode(dataBuffer)['message'].length ==
         json.decode(dataBuffer)['sumData']) {
-      if (json.decode(dataBuffer)['round'] == 1) {
-        waitTimeOutToCheck();
+      if (json.decode(dataBuffer)['total'] ==
+          json.decode(dataBuffer)['round']) {
+        if (json.decode(dataBuffer)['round'] == 1) {
+          waitTimeOutToCheck();
 
-        dataArr.clear();
-        missing.clear();
-        _addDataToCheck(json.decode(dataBuffer)['total']);
-        var resultRemove = _removeDataToCheck(1);
-        if (resultRemove == true) {
-          setState(() {
-            percent = 0;
-            message = json.decode(dataBuffer)['message'].toString();
-            dataArr.add(message);
-          });
+          missingIndex.clear();
+          _addDataToCheck(
+              json.decode(dataBuffer)['start'], json.decode(dataBuffer)['end']);
+          var result = _removeDataToCheck(json.decode(dataBuffer)['index']);
+          if (result == true) {
+            dataArr.add(json.decode(dataBuffer)['message'].toString());
+          }
+        } else {
+          var result = _removeDataToCheck(json.decode(dataBuffer)['index']);
+          if (result == true) {
+            dataArr.add(json.decode(dataBuffer)['message'].toString());
+          }
         }
-      } else {
-        var resultRemove = _removeDataToCheck(json.decode(dataBuffer)['round']);
-        if (resultRemove == true) {
-          setState(() {
-            double round =
-                double.parse(json.decode(dataBuffer)['round'].toString());
-            double numtotal =
-                double.parse(json.decode(dataBuffer)['total'].toString());
-            percent = round / numtotal;
-
-            message = json.decode(dataBuffer)['message'].toString();
-            dataArr.add(message);
-          });
-        }
-      }
-      // _convertToImage();
-      if (json.decode(dataBuffer)['round'] ==
-          json.decode(dataBuffer)['total']) {
         _convertToImage();
       } else {
-        print('checkTime');
+        if (json.decode(dataBuffer)['round'] == 1) {
+          waitTimeOutToCheck();
+          missingIndex.clear();
+          _addDataToCheck(
+              json.decode(dataBuffer)['start'], json.decode(dataBuffer)['end']);
+          var result = _removeDataToCheck(json.decode(dataBuffer)['index']);
+          if (result == true) {
+            dataArr.add(json.decode(dataBuffer)['message'].toString());
+          }
+        } else {
+          var result = _removeDataToCheck(json.decode(dataBuffer)['index']);
+          if (result == true) {
+            dataArr.add(json.decode(dataBuffer)['message'].toString());
+          }
+        }
       }
-    } else {
-      print("NO");
     }
   }
 
@@ -339,14 +494,15 @@ class _CreateUDPState extends State<CreateUDP> {
     // t.cancel();
   }
 
-  void _addDataToCheck(int number) {
-    for (var i = 0; i < number; i++) {
-      missing.add(i + 1);
+  void _addDataToCheck(int _start, _end) {
+    for (var i = _start; i < _end; i++) {
+      missingIndex.add(i);
+      print(i);
     }
   }
 
   _removeDataToCheck(int number) {
-    var result = missing.remove(number);
+    var result = missingIndex.remove(number);
     return result;
   }
 
@@ -354,12 +510,12 @@ class _CreateUDPState extends State<CreateUDP> {
     var dataRefund = {
       'trans': '12345',
       "data": {
-        "message": missing,
+        "message": missingIndex,
         "channel": _to.text,
         "type": "IMAGE",
         "total": 1,
         "round": 1,
-        "sumData": missing.length,
+        "sumData": missingIndex.length,
         "address": json.decode(data)['address'],
         "port": json.decode(data)['port']
       },
@@ -377,14 +533,13 @@ class _CreateUDPState extends State<CreateUDP> {
       appBar: AppBar(actions: [
         IconButton(
             onPressed: () {
-              // timeOut.cancel();
-              print(dataArr);
+              print(dataArr.length);
             },
             icon: Icon(Icons.cancel)),
         IconButton(
             onPressed: () {
-              print('object');
-              waitTimeOutToCheck();
+              print(missingIndex);
+              print(missingIndex.length);
             },
             icon: Icon(Icons.history)),
         IconButton(
@@ -506,7 +661,8 @@ class _CreateUDPState extends State<CreateUDP> {
                   setState(() {
                     sendIndex = 0;
                   });
-                  sendMessage();
+                  // sendMessage();
+                  send();
                 }
               },
               child: Text("send")),

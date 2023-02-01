@@ -41,8 +41,10 @@ class _CreateUDPState extends State<CreateUDP> {
   int totalBufferTo = 0;
   late int total;
   late int totalToCheck;
+  int roundTosend = 100;
   int _start = 0;
   int _end = 100;
+  int percenNumber = 0;
 
   List<Uint8List> sperate = [];
   late Uint8List _bytes;
@@ -60,7 +62,6 @@ class _CreateUDPState extends State<CreateUDP> {
           setState(() {
             data = utf8.decode(result);
           });
-          print(json.decode(data)['command']);
           if (json.decode(data)['command'] == "ack") {
             sendMessage();
           } else if (json.decode(data)['command'] == 'refund') {
@@ -105,10 +106,11 @@ class _CreateUDPState extends State<CreateUDP> {
 
   void _sendTotal() {
     dataArr.clear();
-
     setState(() {
+      showImage == 0;
+
       _start = 0;
-      _end = 100;
+      _end = roundTosend;
       total = json.decode(data)['total'];
       totalToCheck = json.decode(data)['total'];
     });
@@ -141,16 +143,16 @@ class _CreateUDPState extends State<CreateUDP> {
       socket.send(utf8.encode(jsonEncode(dataConfirm)),
           InternetAddress("${IpAddress().ipAddress}"), 2222);
 
-      int checkEnd = _end + 100;
+      int checkEnd = _end + roundTosend;
       if (checkEnd >= total) {
         setState(() {
-          _start = _start + 100;
+          _start = _start + roundTosend;
           _end = total;
         });
       } else {
         setState(() {
-          _start = _start + 100;
-          _end = _end + 100;
+          _start = _start + roundTosend;
+          _end = _end + roundTosend;
         });
       }
     }
@@ -288,7 +290,7 @@ class _CreateUDPState extends State<CreateUDP> {
 
   void _resendData(String dataResend) {
     // int index = json.decode(dataResend)['index'];
-    int indexAdd = json.decode(dataResend)['index'] - 1;
+    int indexAdd = json.decode(dataResend)['index'];
     // print('index Delete:' + index.toString());
     if (json.decode(dataResend)['message'].length ==
         json.decode(dataResend)['sumData']) {
@@ -369,7 +371,7 @@ class _CreateUDPState extends State<CreateUDP> {
   void _convertToImage() {
     timeOut.cancel();
     List<dynamic> newList = [];
-
+    newList.clear();
     if (missingIndex == null || missingIndex.length == 0) {
       if (dataArr.length == totalToCheck) {
         for (int i = 0; i < dataArr.length; i++) {
@@ -448,7 +450,7 @@ class _CreateUDPState extends State<CreateUDP> {
       if (json.decode(dataBuffer)['total'] ==
           json.decode(dataBuffer)['round']) {
         if (json.decode(dataBuffer)['round'] == 1) {
-          waitTimeOutToCheck();
+          // waitTimeOutToCheck();
 
           missingIndex.clear();
           _addDataToCheck(
@@ -482,6 +484,12 @@ class _CreateUDPState extends State<CreateUDP> {
         }
       }
     }
+    setState(() {
+      double index = double.parse(json.decode(dataBuffer)['index'].toString());
+      percent = index / totalToCheck;
+      double cal = index * 100;
+      percenNumber = cal ~/ totalToCheck;
+    });
   }
 
   Future<void> waitTimeOutToCheck() async {
@@ -497,7 +505,6 @@ class _CreateUDPState extends State<CreateUDP> {
   void _addDataToCheck(int _start, _end) {
     for (var i = _start; i < _end; i++) {
       missingIndex.add(i);
-      print(i);
     }
   }
 
@@ -596,6 +603,7 @@ class _CreateUDPState extends State<CreateUDP> {
                   lineWidth: 5,
                   percent: percent,
                   progressColor: Colors.green,
+                  center: Text("${percenNumber}%"),
                 )
               : Container(
                   height: 200,

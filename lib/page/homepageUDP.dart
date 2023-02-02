@@ -23,6 +23,7 @@ class _CreateUDPState extends State<CreateUDP> {
   String data = '';
   late String message;
   List<String> dataArr = [];
+  List<int> dataArrCheck = [];
   List<int> missing = [];
   List<int> missingIndex = [];
   final _textController = TextEditingController();
@@ -50,7 +51,7 @@ class _CreateUDPState extends State<CreateUDP> {
   late Uint8List _bytes;
   late RawDatagramSocket socket;
   void login() async {
-    RawDatagramSocket.bind(InternetAddress.anyIPv4, 2222)
+    RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 2222)
         .then((RawDatagramSocket socket) {
       // Set the handler for receiving data
       this.socket = socket;
@@ -95,8 +96,11 @@ class _CreateUDPState extends State<CreateUDP> {
 
   void send() {
     var data = {
-      'trans': '1234',
-      'data': {'total': sperate.length, 'channel': _to.text},
+      'data': {
+        'total': sperate.length,
+        'channel': _to.text,
+        'trans': '1234',
+      },
       "token": _username.text,
       "command": 'sendTotal'
     };
@@ -106,6 +110,7 @@ class _CreateUDPState extends State<CreateUDP> {
 
   void _sendTotal() {
     dataArr.clear();
+    dataArrCheck.clear();
     setState(() {
       showImage == 0;
 
@@ -114,6 +119,7 @@ class _CreateUDPState extends State<CreateUDP> {
       total = json.decode(data)['total'];
       totalToCheck = json.decode(data)['total'];
     });
+    _genData(totalToCheck);
     if (total <= _end) {
       setState(() {
         _end = total;
@@ -129,12 +135,12 @@ class _CreateUDPState extends State<CreateUDP> {
       print('Success1');
     } else {
       var dataConfirm = {
-        'trans': '1234',
         'data': {
           "start": _start,
           "end": _end,
           "address": json.decode(data)['address'],
           "port": json.decode(data)['port'],
+          "trans":json.decode(data)['trans']
         },
         "command": 'confirmToSend'
       };
@@ -251,7 +257,7 @@ class _CreateUDPState extends State<CreateUDP> {
     if (resendIndex != dataListRefund.length) {
       int dataIndex = dataListRefund[resendIndex];
       var dataResend = {
-        'trans': '12345',
+        
         "data": {
           "message": sperate[dataIndex],
           "channel": _to.text,
@@ -261,7 +267,8 @@ class _CreateUDPState extends State<CreateUDP> {
           "index": dataListRefund[resendIndex],
           "sumData": sperate[dataIndex].length,
           "address": address,
-          "port": port
+          "port": port,
+          'trans': json.decode(data)['trans']
         },
         "token": _username.text,
         "command": "resend"
@@ -303,14 +310,16 @@ class _CreateUDPState extends State<CreateUDP> {
               showImage = 0;
               message = json.decode(dataResend)['message'].toString();
               // dataArr.add(message);
-              dataArr.add(message);
+              _removeAndAdds(indexAdd, message);
+              dataArrCheck.add(json.decode(dataResend)['index']);
             });
           } else {
             setState(() {
               showImage = 0;
               message = json.decode(dataResend)['message'].toString();
               // dataArr.add(message);
-              dataArr.insert(indexAdd, message);
+              _removeAndAdds(indexAdd, message);
+              dataArrCheck.add(json.decode(dataResend)['index']);
             });
           }
         }
@@ -321,13 +330,15 @@ class _CreateUDPState extends State<CreateUDP> {
             setState(() {
               message = json.decode(dataResend)['message'].toString();
               // dataArr.add(message);
-              dataArr.add(message);
+              _removeAndAdds(indexAdd, message);
+              dataArrCheck.add(json.decode(dataResend)['index']);
             });
           } else {
             setState(() {
               message = json.decode(dataResend)['message'].toString();
               // dataArr.add(message);
-              dataArr.insert(indexAdd, message);
+              _removeAndAdds(indexAdd, message);
+              dataArrCheck.add(json.decode(dataResend)['index']);
             });
           }
         }
@@ -373,9 +384,9 @@ class _CreateUDPState extends State<CreateUDP> {
     List<dynamic> newList = [];
     newList.clear();
     if (missingIndex == null || missingIndex.length == 0) {
-      if (dataArr.length == totalToCheck) {
+      if (dataArrCheck.length == totalToCheck) {
         for (int i = 0; i < dataArr.length; i++) {
-          newList.addAll(jsonDecode(dataArr[i]));
+          newList.addAll(jsonDecode(dataArr[i].toString()));
         }
         setState(() {
           String base64string = base64.encode(newList.cast<int>());
@@ -457,12 +468,16 @@ class _CreateUDPState extends State<CreateUDP> {
               json.decode(dataBuffer)['start'], json.decode(dataBuffer)['end']);
           var result = _removeDataToCheck(json.decode(dataBuffer)['index']);
           if (result == true) {
-            dataArr.add(json.decode(dataBuffer)['message'].toString());
+            _removeAndAdds(json.decode(dataBuffer)['index'],
+                json.decode(dataBuffer)['message'].toString());
+            dataArrCheck.add(json.decode(dataBuffer)['index']);
           }
         } else {
           var result = _removeDataToCheck(json.decode(dataBuffer)['index']);
           if (result == true) {
-            dataArr.add(json.decode(dataBuffer)['message'].toString());
+            _removeAndAdds(json.decode(dataBuffer)['index'],
+                json.decode(dataBuffer)['message'].toString());
+            dataArrCheck.add(json.decode(dataBuffer)['index']);
           }
         }
         _convertToImage();
@@ -474,12 +489,16 @@ class _CreateUDPState extends State<CreateUDP> {
               json.decode(dataBuffer)['start'], json.decode(dataBuffer)['end']);
           var result = _removeDataToCheck(json.decode(dataBuffer)['index']);
           if (result == true) {
-            dataArr.add(json.decode(dataBuffer)['message'].toString());
+            _removeAndAdds(json.decode(dataBuffer)['index'],
+                json.decode(dataBuffer)['message'].toString());
+            dataArrCheck.add(json.decode(dataBuffer)['index']);
           }
         } else {
           var result = _removeDataToCheck(json.decode(dataBuffer)['index']);
           if (result == true) {
-            dataArr.add(json.decode(dataBuffer)['message'].toString());
+            _removeAndAdds(json.decode(dataBuffer)['index'],
+                json.decode(dataBuffer)['message'].toString());
+            dataArrCheck.add(json.decode(dataBuffer)['index']);
           }
         }
       }
@@ -505,6 +524,19 @@ class _CreateUDPState extends State<CreateUDP> {
   void _addDataToCheck(int _start, _end) {
     for (var i = _start; i < _end; i++) {
       missingIndex.add(i);
+    }
+  }
+
+  void _genData(int number) {
+    for (var i = 0; i < number; i++) {
+      dataArr.add(i.toString());
+    }
+  }
+
+  _removeAndAdds(int index, var message) {
+    var result = dataArr.remove(index.toString());
+    if (result == true) {
+      dataArr.insert(index, message);
     }
   }
 
@@ -560,7 +592,7 @@ class _CreateUDPState extends State<CreateUDP> {
               List<dynamic> newList = [];
 
               for (int i = 0; i < dataArr.length; i++) {
-                newList.addAll(jsonDecode(dataArr[i]));
+                newList.addAll(jsonDecode(dataArr[i].toString()));
               }
               setState(() {
                 String base64string = base64.encode(newList.cast<int>());

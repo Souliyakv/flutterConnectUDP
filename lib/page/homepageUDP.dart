@@ -22,10 +22,9 @@ class _CreateUDPState extends State<CreateUDP> {
   File? file;
   String data = '';
   late String message;
-  List<String> dataArr = [];
-  List<int> dataArrCheck = [];
-  List<int> missing = [];
-  List<int> missingIndex = [];
+  var dataArr = {};
+  var dataArrCheck = {};
+  var missingIndex = {};
   final _textController = TextEditingController();
   final _username = TextEditingController();
   final _password = TextEditingController();
@@ -40,18 +39,20 @@ class _CreateUDPState extends State<CreateUDP> {
   var port;
   int totalBuffer = 0;
   int totalBufferTo = 0;
-  late int total;
-  late int totalToCheck;
+  var total = {};
+  var totalToCheck = {};
   int roundTosend = 100;
   int _start = 0;
   int _end = 100;
   int percenNumber = 0;
-
+  var allImageToSend = {};
+  late int allImageToSendKey;
   List<Uint8List> sperate = [];
   late Uint8List _bytes;
   late RawDatagramSocket socket;
+  var allImageToShow = [];
   void login() async {
-    RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 2222)
+    RawDatagramSocket.bind(InternetAddress.anyIPv4, 2222)
         .then((RawDatagramSocket socket) {
       // Set the handler for receiving data
       this.socket = socket;
@@ -78,10 +79,10 @@ class _CreateUDPState extends State<CreateUDP> {
               sendIndex = 0;
             });
             sendMessage();
+          } else if (json.decode(data)['command'] == 'success') {
+            allImageToSend.remove(json.decode(data)['trans']);
           } else {
             _pushButterToImage(data);
-            // print(json.decode(data)['message']);
-            // _confirmToSend();
           }
         }
       });
@@ -97,9 +98,9 @@ class _CreateUDPState extends State<CreateUDP> {
   void send() {
     var data = {
       'data': {
-        'total': sperate.length,
+        'total': allImageToSend[allImageToSendKey].length,
         'channel': _to.text,
-        'trans': '1234',
+        'trans': allImageToSendKey,
       },
       "token": _username.text,
       "command": 'sendTotal'
@@ -116,22 +117,27 @@ class _CreateUDPState extends State<CreateUDP> {
 
       _start = 0;
       _end = roundTosend;
-      total = json.decode(data)['total'];
-      totalToCheck = json.decode(data)['total'];
+      // total = json.decode(data)['total'];
+      // totalToCheck = json.decode(data)['total'];
     });
-    _genData(totalToCheck);
-    if (total <= _end) {
+    dataArrCheck.addAll({json.decode(data)['trans']: []});
+    total.addAll({json.decode(data)['trans']: json.decode(data)['total']});
+
+    totalToCheck
+        .addAll({json.decode(data)['trans']: json.decode(data)['total']});
+    _genData(totalToCheck[json.decode(data)['trans']]);
+    if (total[json.decode(data)['trans']] <= _end) {
       setState(() {
-        _end = total;
+        _end = total[json.decode(data)['trans']];
       });
     }
     _confirmToSend();
   }
 
   void _confirmToSend() {
-    missingIndex.clear();
+    missingIndex.remove(json.decode(data)['trans']);
 
-    if (_start >= total) {
+    if (_start >= total[json.decode(data)['trans']]) {
       print('Success1');
     } else {
       var dataConfirm = {
@@ -140,20 +146,19 @@ class _CreateUDPState extends State<CreateUDP> {
           "end": _end,
           "address": json.decode(data)['address'],
           "port": json.decode(data)['port'],
-          "trans":json.decode(data)['trans']
+          "trans": json.decode(data)['trans']
         },
         "command": 'confirmToSend'
       };
-      print('confirm');
       print(dataConfirm);
       socket.send(utf8.encode(jsonEncode(dataConfirm)),
           InternetAddress("${IpAddress().ipAddress}"), 2222);
 
       int checkEnd = _end + roundTosend;
-      if (checkEnd >= total) {
+      if (checkEnd >= total[json.decode(data)['trans']]) {
         setState(() {
           _start = _start + roundTosend;
-          _end = total;
+          _end = total[json.decode(data)['trans']];
         });
       } else {
         setState(() {
@@ -172,9 +177,8 @@ class _CreateUDPState extends State<CreateUDP> {
     print(data);
     if (sendIndexData < json.decode(data)['end']) {
       var dataToSend = {
-        'trans': '12345',
         "data": {
-          "message": sperate[sendIndexData],
+          "message": allImageToSend[json.decode(data)['trans']][sendIndexData],
           "channel": _to.text,
           "type": "IMAGE",
           "index": sendIndexData,
@@ -182,9 +186,11 @@ class _CreateUDPState extends State<CreateUDP> {
           "round": sendIndex + 1,
           "start": json.decode(data)['start'],
           "end": json.decode(data)['end'],
-          "sumData": sperate[sendIndexData].length,
+          "sumData":
+              allImageToSend[json.decode(data)['trans']][sendIndexData].length,
           "address": json.decode(data)['address'],
-          "port": json.decode(data)['port']
+          "port": json.decode(data)['port'],
+          "trans": json.decode(data)['trans'],
         },
         "command": "send"
       };
@@ -196,76 +202,19 @@ class _CreateUDPState extends State<CreateUDP> {
     }
   }
 
-  // void sendMessage() {
-  //   if (sendIndex != sperate.length) {
-  //     // print(sperate[sendIndex].length);
-  //     // print(sendIndex);
-  //     var data = {
-  //       'trans': '12345',
-  //       "data": {
-  //         "message": sperate[sendIndex],
-  //         "channel": _to.text,
-  //         "type": "IMAGE",
-  //         "total": sperate.length,
-  //         "round": sendIndex + 1,
-  //         "sumData": sperate[sendIndex].length
-  //       },
-  //       "token": _username.text,
-  //       "command": "send"
-  //     };
-  //     this.socket.send(utf8.encode(jsonEncode(data)),
-  //         InternetAddress("${IpAddress().ipAddress}"), 2222);
-  //     setState(() {
-  //       sendIndex++;
-  //     });
-  //   } else {
-  //     print("Success");
-  //     // sperate.clear();
-  //   }
-  // }
-
-  // void sendMessage() async {
-  //   Timer.periodic(new Duration(milliseconds: 150), (timer) {
-  //     int index = int.parse(timer.tick.toString());
-  //     index = index - 1;
-  //     if (index < sperate.length) {
-  //       var data = {
-  //         'trans': '12345',
-  //         "data": {
-  //           "message": sperate[index],
-  //           "channel": _to.text,
-  //           "type": "IMAGE",
-  //           "total": sperate.length,
-  //           "round": index + 1,
-  //           "sumData":sperate[index].length
-  //         },
-  //         "token": _username.text,
-  //         "command": "send"
-  //       };
-  //       this.socket.send(utf8.encode(jsonEncode(data)),
-  //           InternetAddress("${IpAddress().ipAddress}"), 2222);
-  //       //  print('hello' + timer.tick.toString());
-  //     } else {
-  //       sperate = [];
-  //       timer.cancel();
-  //     }
-  //   });
-  //   // });
-  // }
-
   void resend() {
     if (resendIndex != dataListRefund.length) {
       int dataIndex = dataListRefund[resendIndex];
       var dataResend = {
-        
         "data": {
-          "message": sperate[dataIndex],
+          "message": allImageToSend[json.decode(data)['trans']][dataIndex],
           "channel": _to.text,
           "type": "IMAGE",
           "total": dataListRefund.length,
           "round": resendIndex + 1,
           "index": dataListRefund[resendIndex],
-          "sumData": sperate[dataIndex].length,
+          "sumData":
+              allImageToSend[json.decode(data)['trans']][dataIndex].length,
           "address": address,
           "port": port,
           'trans': json.decode(data)['trans']
@@ -311,7 +260,8 @@ class _CreateUDPState extends State<CreateUDP> {
               message = json.decode(dataResend)['message'].toString();
               // dataArr.add(message);
               _removeAndAdds(indexAdd, message);
-              dataArrCheck.add(json.decode(dataResend)['index']);
+              dataArrCheck[json.decode(dataResend)['trans']]
+                  .add(json.decode(dataResend)['index']);
             });
           } else {
             setState(() {
@@ -319,7 +269,8 @@ class _CreateUDPState extends State<CreateUDP> {
               message = json.decode(dataResend)['message'].toString();
               // dataArr.add(message);
               _removeAndAdds(indexAdd, message);
-              dataArrCheck.add(json.decode(dataResend)['index']);
+              dataArrCheck[json.decode(dataResend)['trans']]
+                  .add(json.decode(dataResend)['index']);
             });
           }
         }
@@ -331,14 +282,16 @@ class _CreateUDPState extends State<CreateUDP> {
               message = json.decode(dataResend)['message'].toString();
               // dataArr.add(message);
               _removeAndAdds(indexAdd, message);
-              dataArrCheck.add(json.decode(dataResend)['index']);
+              dataArrCheck[json.decode(dataResend)['trans']]
+                  .add(json.decode(dataResend)['index']);
             });
           } else {
             setState(() {
               message = json.decode(dataResend)['message'].toString();
               // dataArr.add(message);
               _removeAndAdds(indexAdd, message);
-              dataArrCheck.add(json.decode(dataResend)['index']);
+              dataArrCheck[json.decode(dataResend)['trans']]
+                  .add(json.decode(dataResend)['index']);
             });
           }
         }
@@ -349,7 +302,8 @@ class _CreateUDPState extends State<CreateUDP> {
       } else {
         print('checkTime');
       }
-      print('length DataArr' + dataArr.length.toString());
+      // print('length DataArr' +
+      //     dataArr[json.decode(dataResend)['trans']].length.toString());
     } else {
       print("NO");
     }
@@ -360,8 +314,11 @@ class _CreateUDPState extends State<CreateUDP> {
       var image = await ImagePicker().getImage(source: ImageSource.gallery);
       file = File(image!.path);
       imagebytes = await file!.readAsBytes();
+      var keyIndex;
       setState(() {
         totalBuffer = imagebytes.length;
+        keyIndex = DateTime.now().millisecondsSinceEpoch;
+        allImageToSendKey = keyIndex;
       });
       int chunkSize = 2000;
       for (int i = 0; i < imagebytes.length; i += chunkSize) {
@@ -371,6 +328,7 @@ class _CreateUDPState extends State<CreateUDP> {
         // chunk.add(imagebytes.sublist(i, end));
         sperate.add(imagebytes.sublist(i, end));
       }
+      allImageToSend.addAll({keyIndex: sperate});
       _testText.text = sperate.length.toString();
       // print(sperate);
       // print(sperate.length);
@@ -379,79 +337,54 @@ class _CreateUDPState extends State<CreateUDP> {
     }
   }
 
+  void sendSuccess(var data) {
+    var dataSuccess = {
+      'data': {
+        'trans': json.decode(data)['trans'],
+        'address': json.decode(data)['address'],
+        'port': json.decode(data)['port'],
+      },
+      'command': 'success'
+    };
+    this.socket.send(utf8.encode(jsonEncode(dataSuccess)),
+        InternetAddress("${IpAddress().ipAddress}"), 2222);
+  }
+
   void _convertToImage() {
     timeOut.cancel();
     List<dynamic> newList = [];
     newList.clear();
-    if (missingIndex == null || missingIndex.length == 0) {
-      if (dataArrCheck.length == totalToCheck) {
-        for (int i = 0; i < dataArr.length; i++) {
-          newList.addAll(jsonDecode(dataArr[i].toString()));
+
+    if (missingIndex[json.decode(data)['trans']] == null ||
+        missingIndex[json.decode(data)['trans']].length == 0) {
+      if (dataArrCheck[json.decode(data)['trans']].length ==
+          totalToCheck[json.decode(data)['trans']]) {
+        for (int i = 0; i < dataArr[json.decode(data)['trans']].length; i++) {
+          newList.addAll(
+              jsonDecode(dataArr[json.decode(data)['trans']][i].toString()));
         }
+
+        sendSuccess(data);
+        dataArr.remove(json.decode(data)['trans']);
+        dataArrCheck.remove(json.decode(data)['trans']);
         setState(() {
           String base64string = base64.encode(newList.cast<int>());
           imageFireResult = "data:image/jpg;base64,$base64string";
           String uri = imageFireResult.toString();
           _bytes = base64.decode(uri.split(',').last);
+          allImageToShow.add(_bytes);
           _testText.text = imageFireResult;
           showImage = 1;
+          totalBufferTo = newList.length;
         });
+        newList.clear();
       } else {
         _confirmToSend();
       }
     } else {
       _refundData();
     }
-
-    // print(newList.runtimeType);
-    // print(newList.length);
-    // print(json.decode(data)['total'].toString());
-    // print(Check.length);
-    // print(Check);
   }
-
-  // void _pushButterToImage(String dataBuffer) {
-  //   // print(json.decode(dataBuffer)['message']);
-  //   if (json.decode(dataBuffer)['message'].length ==
-  //       json.decode(dataBuffer)['sumData']) {
-  //     if (json.decode(dataBuffer)['round'] == 1) {
-  //       waitTimeOutToCheck();
-  //       dataArr.clear();
-  //       missing.clear();
-  //       _addDataToCheck(json.decode(dataBuffer)['total']);
-  //       var resultRemove = _removeDataToCheck(1);
-  //       if (resultRemove == true) {
-  //         setState(() {
-  //           percent = 0;
-  //           message = json.decode(dataBuffer)['message'].toString();
-  //           dataArr.add(message);
-  //         });
-  //       }
-  //     } else {
-  //       var resultRemove = _removeDataToCheck(json.decode(dataBuffer)['round']);
-  //       if (resultRemove == true) {
-  //         setState(() {
-  //           double round =
-  //               double.parse(json.decode(dataBuffer)['round'].toString());
-  //           double numtotal =
-  //               double.parse(json.decode(dataBuffer)['total'].toString());
-  //           percent = round / numtotal;
-  //           message = json.decode(dataBuffer)['message'].toString();
-  //           dataArr.add(message);
-  //         });
-  //       }
-  //     }
-  //     // _convertToImage();
-  //     if (json.decode(dataBuffer)['round'] ==
-  //         json.decode(dataBuffer)['total']) {
-  //       _convertToImage();
-  //     } else {
-  //       print('checkTime');
-  //     }
-  //   } else {
-  //     print("NO");
-  //   }
-  // }
 
   void _pushButterToImage(String dataBuffer) {
     // print(json.decode(dataBuffer)['round']);
@@ -461,58 +394,62 @@ class _CreateUDPState extends State<CreateUDP> {
       if (json.decode(dataBuffer)['total'] ==
           json.decode(dataBuffer)['round']) {
         if (json.decode(dataBuffer)['round'] == 1) {
-          // waitTimeOutToCheck();
+          waitTimeOutToCheck();
 
-          missingIndex.clear();
-          _addDataToCheck(
-              json.decode(dataBuffer)['start'], json.decode(dataBuffer)['end']);
+          missingIndex.remove(json.decode(dataBuffer)['trans']);
+          _addDataToCheck(json.decode(dataBuffer)['start'],
+              json.decode(dataBuffer)['end'], json.decode(dataBuffer)['trans']);
           var result = _removeDataToCheck(json.decode(dataBuffer)['index']);
           if (result == true) {
             _removeAndAdds(json.decode(dataBuffer)['index'],
                 json.decode(dataBuffer)['message'].toString());
-            dataArrCheck.add(json.decode(dataBuffer)['index']);
+            dataArrCheck[json.decode(dataBuffer)['trans']]
+                .add(json.decode(dataBuffer)['index']);
           }
         } else {
           var result = _removeDataToCheck(json.decode(dataBuffer)['index']);
           if (result == true) {
             _removeAndAdds(json.decode(dataBuffer)['index'],
                 json.decode(dataBuffer)['message'].toString());
-            dataArrCheck.add(json.decode(dataBuffer)['index']);
+            dataArrCheck[json.decode(dataBuffer)['trans']]
+                .add(json.decode(dataBuffer)['index']);
           }
         }
         _convertToImage();
       } else {
         if (json.decode(dataBuffer)['round'] == 1) {
           waitTimeOutToCheck();
-          missingIndex.clear();
-          _addDataToCheck(
-              json.decode(dataBuffer)['start'], json.decode(dataBuffer)['end']);
+          missingIndex.remove(json.decode(dataBuffer)['trans']);
+          _addDataToCheck(json.decode(dataBuffer)['start'],
+              json.decode(dataBuffer)['end'], json.decode(dataBuffer)['trans']);
           var result = _removeDataToCheck(json.decode(dataBuffer)['index']);
           if (result == true) {
             _removeAndAdds(json.decode(dataBuffer)['index'],
                 json.decode(dataBuffer)['message'].toString());
-            dataArrCheck.add(json.decode(dataBuffer)['index']);
+            dataArrCheck[json.decode(dataBuffer)['trans']]
+                .add(json.decode(dataBuffer)['index']);
           }
         } else {
           var result = _removeDataToCheck(json.decode(dataBuffer)['index']);
           if (result == true) {
             _removeAndAdds(json.decode(dataBuffer)['index'],
                 json.decode(dataBuffer)['message'].toString());
-            dataArrCheck.add(json.decode(dataBuffer)['index']);
+            dataArrCheck[json.decode(dataBuffer)['trans']]
+                .add(json.decode(dataBuffer)['index']);
           }
         }
       }
     }
     setState(() {
       double index = double.parse(json.decode(dataBuffer)['index'].toString());
-      percent = index / totalToCheck;
+      percent = index / totalToCheck[json.decode(dataBuffer)['trans']];
       double cal = index * 100;
-      percenNumber = cal ~/ totalToCheck;
+      percenNumber = cal ~/ totalToCheck[json.decode(dataBuffer)['trans']];
     });
   }
 
   Future<void> waitTimeOutToCheck() async {
-    timeOut = Timer(Duration(seconds: 5), () {
+    timeOut = Timer(Duration(seconds: 2), () {
       print('PrinttimeOut');
       _convertToImage();
     });
@@ -521,49 +458,52 @@ class _CreateUDPState extends State<CreateUDP> {
     // t.cancel();
   }
 
-  void _addDataToCheck(int _start, _end) {
+  void _addDataToCheck(int _start, _end, var trans) {
+    missingIndex.addAll({trans: []});
     for (var i = _start; i < _end; i++) {
-      missingIndex.add(i);
+      missingIndex[trans].add(i);
     }
   }
 
   void _genData(int number) {
+    dataArr.addAll({json.decode(data)['trans']: []});
     for (var i = 0; i < number; i++) {
-      dataArr.add(i.toString());
+      dataArr[json.decode(data)['trans']].add(i.toString());
     }
+
+    // print('all data is :'+dataArr.toString());
   }
 
   _removeAndAdds(int index, var message) {
-    var result = dataArr.remove(index.toString());
+    var result = dataArr[json.decode(data)['trans']].remove(index.toString());
     if (result == true) {
-      dataArr.insert(index, message);
+      dataArr[json.decode(data)['trans']].insert(index, message);
     }
   }
 
   _removeDataToCheck(int number) {
-    var result = missingIndex.remove(number);
+    var result = missingIndex[json.decode(data)['trans']].remove(number);
     return result;
   }
 
   void _refundData() {
     var dataRefund = {
-      'trans': '12345',
       "data": {
-        "message": missingIndex,
+        "message": missingIndex[json.decode(data)['trans']],
         "channel": _to.text,
         "type": "IMAGE",
         "total": 1,
         "round": 1,
-        "sumData": missingIndex.length,
+        "sumData": missingIndex[json.decode(data)['trans']].length,
         "address": json.decode(data)['address'],
-        "port": json.decode(data)['port']
+        "port": json.decode(data)['port'],
+        "trans": json.decode(data)['trans'],
       },
       "token": _username.text,
       "command": "refund"
     };
     this.socket.send(utf8.encode(jsonEncode(dataRefund)),
         InternetAddress("${IpAddress().ipAddress}"), 2222);
-    print(missing);
   }
 
   @override
@@ -572,7 +512,10 @@ class _CreateUDPState extends State<CreateUDP> {
       appBar: AppBar(actions: [
         IconButton(
             onPressed: () {
-              print(dataArr.length);
+              setState(() {
+                showImage = 0;
+              });
+              allImageToShow.clear();
             },
             icon: Icon(Icons.cancel)),
         IconButton(
@@ -583,8 +526,6 @@ class _CreateUDPState extends State<CreateUDP> {
             icon: Icon(Icons.history)),
         IconButton(
             onPressed: () {
-              // _removeDataToCheck();
-              _refundData();
             },
             icon: Icon(Icons.check)),
         IconButton(
@@ -603,26 +544,13 @@ class _CreateUDPState extends State<CreateUDP> {
                 showImage = 1;
                 totalBufferTo = newList.length;
               });
-              // List<dynamic> newList = [];
-              // var a = [];
-
-              // for (int i = 0; i < dataArr.length; i++) {
-              //   newList.addAll(jsonDecode(dataArr[i]));
-              // }
-              // setState(() {
-              //   String base64string = base64.encode(newList.cast<int>());
-              //   imageFireResult = "data:image/jpg;base64,$base64string";
-              //   String uri = imageFireResult.toString();
-              //   _bytes = base64.decode(uri.split(',').last);
-              //   _testText.text = imageFireResult;
-              //   showImage = 1;
-              // });
             },
             icon: Icon(Icons.send)),
         IconButton(
             onPressed: () {
               // chunk.clear();
               sperate.clear();
+              allImageToSend.clear();
               chooseImage(context);
             },
             icon: Icon((Icons.get_app)))
@@ -637,14 +565,30 @@ class _CreateUDPState extends State<CreateUDP> {
                   progressColor: Colors.green,
                   center: Text("${percenNumber}%"),
                 )
-              : Container(
-                  height: 200,
-                  width: 200,
-                  child: Image.memory(
-                    _bytes,
-                    fit: BoxFit.cover,
-                  ),
+              : ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: allImageToShow.length,
+                  itemBuilder: (context, index) {
+                    return Card(
+                      child: Container(
+                        height: 250,
+                        width: double.infinity,
+                        child: Image.memory(
+                          allImageToShow[index],
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    );
+                  },
                 ),
+          // : Container(
+          //     height: 200,
+          //     width: 200,
+          //     child: Image.memory(
+          //       _bytes,
+          //       fit: BoxFit.cover,
+          //     ),
+          //   ),
           SizedBox(height: 20),
           TextField(
             controller: _testText,
@@ -698,11 +642,29 @@ class _CreateUDPState extends State<CreateUDP> {
           TextButton(
               onPressed: () {
                 if (_textController.text.isNotEmpty && _to.text.isNotEmpty) {
-                  setState(() {
-                    sendIndex = 0;
-                  });
-                  // sendMessage();
-                  send();
+                  if (sperate.length == 0 || sperate == null) {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: Text("ກະລຸນາເລືອກຮຸບພາບ"),
+                          actions: [
+                            TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                child: Text("ຕົກລົງ"))
+                          ],
+                        );
+                      },
+                    );
+                  } else {
+                    setState(() {
+                      sendIndex = 0;
+                    });
+                    // sendMessage();
+                    send();
+                  }
                 }
               },
               child: Text("send")),

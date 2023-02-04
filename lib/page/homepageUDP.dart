@@ -36,7 +36,9 @@ class _CreateUDPState extends State<CreateUDP> {
   // int resendIndex = 0;
   var resendIndex = {};
   late Timer timeOut;
-  List<int> dataListRefund = [];
+  // List<int> dataListRefund = [];
+  var dataListRefund = {};
+  
   // var address;
   // var port;
   int totalBuffer = 0;
@@ -239,16 +241,16 @@ class _CreateUDPState extends State<CreateUDP> {
   }
 
   void resend(var port, address) {
-    if (resendIndex[json.decode(data)['trans']] != dataListRefund.length) {
-      int dataIndex = dataListRefund[resendIndex[json.decode(data)['trans']]];
+    if (resendIndex[json.decode(data)['trans']] != dataListRefund[json.decode(data)['trans']].length) {
+      int dataIndex = dataListRefund[json.decode(data)['trans']][resendIndex[json.decode(data)['trans']]];
       var dataResend = {
         "data": {
           "message": allImageToSend[json.decode(data)['trans']][dataIndex],
           "channel": _to.text,
           "type": "IMAGE",
-          "total": dataListRefund.length,
+          "total": dataListRefund[json.decode(data)['trans']].length,
           "round": resendIndex[json.decode(data)['trans']] + 1,
-          "index": dataListRefund[resendIndex[json.decode(data)['trans']]],
+          "index": dataListRefund[json.decode(data)['trans']][resendIndex[json.decode(data)['trans']]],
           "sumData":
               allImageToSend[json.decode(data)['trans']][dataIndex].length,
           "address": address,
@@ -274,14 +276,15 @@ class _CreateUDPState extends State<CreateUDP> {
   }
 
   void _sendRefunData(String dataRefund) {
-    dataListRefund.clear();
+    // dataListRefund[json.decode(dataRefund)['trans']].clear();
     resendIndex.addAll({json.decode(dataRefund)['trans']: 0});
-    setState(() {
-      // address = json.decode(dataRefund)['address'];
-      // port = json.decode(dataRefund)['port'];
-      // resendIndex = 0;
-      dataListRefund = [...json.decode(dataRefund)['message']];
-    });
+    dataListRefund.addAll({json.decode(dataRefund)['trans']:json.decode(dataRefund)['message']});
+    // setState(() {
+    //   // address = json.decode(dataRefund)['address'];
+    //   // port = json.decode(dataRefund)['port'];
+    //   // resendIndex = 0;
+    //   dataListRefund = [...json.decode(dataRefund)['message']];
+    // });
 
     resend(json.decode(dataRefund)['port'], json.decode(dataRefund)['address']);
   }

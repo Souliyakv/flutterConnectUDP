@@ -41,6 +41,7 @@ dependencies:
   image_picker: ^0.8.6
   image: ^4.0.10
   percent_indicator: ^4.2.2
+  path_provider: ^2.0.12
 
 dev_dependencies:
   flutter_test:

@@ -31,12 +31,15 @@ class _CreateUDPState extends State<CreateUDP> {
   final _password = TextEditingController();
   final _to = TextEditingController();
   int showImage = 0;
+  int totalSendAgain = 0;
   double percent = 0;
   // int sendIndex = 0;
   var sendIndex = {};
   // int resendIndex = 0;
   var resendIndex = {};
   late Timer timeOut;
+  late Timer timeOutSend;
+  late Timer timeOutResend;
   // List<int> dataListRefund = [];
   var dataListRefund = {};
 
@@ -58,7 +61,7 @@ class _CreateUDPState extends State<CreateUDP> {
   late RawDatagramSocket socket;
   var allImageToShow = [];
   void login() async {
-    RawDatagramSocket.bind(InternetAddress.anyIPv4, 2222)
+    RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 2222)
         .then((RawDatagramSocket socket) {
       // Set the handler for receiving data
       this.socket = socket;
@@ -71,12 +74,14 @@ class _CreateUDPState extends State<CreateUDP> {
             data = utf8.decode(result);
           });
           if (json.decode(data)['command'] == "ack") {
+            timeOutSend.cancel();
             sendMessage(data);
           } else if (json.decode(data)['command'] == 'refund') {
             _sendRefunData(data);
           } else if (json.decode(data)['command'] == 'resend') {
             _resendData(data);
           } else if (json.decode(data)['command'] == 'ackResend') {
+            timeOutResend.cancel();
             resend(data);
           } else if (json.decode(data)['command'] == 'sendTotal') {
             _sendTotal(data);
@@ -241,6 +246,7 @@ class _CreateUDPState extends State<CreateUDP> {
         },
         "command": "send"
       };
+      waitTimeOutToSendAgain(dataToSend);
       this.socket.send(utf8.encode(jsonEncode(dataToSend)),
           InternetAddress("${IpAddress().ipAddress}"), 2222);
       sendIndex.update(
@@ -253,6 +259,72 @@ class _CreateUDPState extends State<CreateUDP> {
       // });
     }
     // print('send message');
+  }
+
+  void sendAg(var sendAgain) {
+    timeOutSend.cancel();
+    if (totalSendAgain >= 3) {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text("ການສົ່ງລົ້ມເຫຼວ ກະລຸຮາກວດສອບອິນເຕີແນັດ"),
+            actions: [
+              TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text("ຕົກລົງ"))
+            ],
+          );
+        },
+      );
+    } else {
+      var dataToSend = {
+        "data": {
+          "message": json.decode(sendAgain)['data']['message'],
+          "channel": json.decode(sendAgain)['data']['channel'],
+          "type": json.decode(sendAgain)['data']['type'],
+          "index": json.decode(sendAgain)['data']['index'],
+          "total": json.decode(sendAgain)['data']['total'],
+          "round": json.decode(sendAgain)['data']['round'],
+          "start": json.decode(sendAgain)['data']['start'],
+          "end": json.decode(sendAgain)['data']['end'],
+          "sumData": json.decode(sendAgain)['data']['sumData'],
+          "address": json.decode(sendAgain)['data']['address'],
+          "port": json.decode(sendAgain)['data']['port'],
+          "trans": json.decode(sendAgain)['data']['trans'],
+        },
+        "command": "send"
+      };
+      waitTimeOutToSendAgain(dataToSend);
+      this.socket.send(utf8.encode(jsonEncode(dataToSend)),
+          InternetAddress("${IpAddress().ipAddress}"), 2222);
+      setState(() {
+        totalSendAgain++;
+      });
+    }
+  }
+
+  void resendAg(var resendAg) {
+    var resend = {
+      "data": {
+        "message": json.decode(resendAg)['data']['message'],
+        "channel": json.decode(resendAg)['data']['channel'],
+        "type": json.decode(resendAg)['data']['type'],
+        "total": json.decode(resendAg)['data']['total'],
+        "round": json.decode(resendAg)['data']['round'],
+        "index": json.decode(resendAg)['data']['index'],
+        "sumData": json.decode(resendAg)['data']['sumData'],
+        "address": json.decode(resendAg)['data']['address'],
+        "port": json.decode(resendAg)['data']['port'],
+        'trans': json.decode(resendAg)['data']['trans']
+      },
+      "token": json.decode(resendAg)['token'],
+      "command": "resend"
+    };
+    this.socket.send(utf8.encode(jsonEncode(resend)),
+          InternetAddress("${IpAddress().ipAddress}"), 2222);
   }
 
   void resend(var dataResend) {
@@ -281,6 +353,7 @@ class _CreateUDPState extends State<CreateUDP> {
       };
       this.socket.send(utf8.encode(jsonEncode(resend)),
           InternetAddress("${IpAddress().ipAddress}"), 2222);
+      waitTimeOutToResendAgain(dataResend);
       resendIndex.update(
           json.decode(dataResend)['trans'],
           (value) =>
@@ -452,7 +525,7 @@ class _CreateUDPState extends State<CreateUDP> {
           _testText.text = imageFireResult;
           showImage = 1;
           totalBufferTo = newList.length;
-          saveToStorage(base64string);
+          // saveToStorage(base64string);
         });
 
         newList.clear();
@@ -546,6 +619,23 @@ class _CreateUDPState extends State<CreateUDP> {
 
     // and later, before the timer goes off...
     // t.cancel();
+  }
+
+  Future<void> waitTimeOutToSendAgain(var dataSend) async {
+    timeOutSend = Timer(Duration(seconds: 3), () {
+      // print('PrinttimeOut');
+      // _convertToImage(dataWait);
+      sendAg(dataSend);
+    });
+
+    // and later, before the timer goes off...
+    // t.cancel();
+  }
+
+  Future<void> waitTimeOutToResendAgain(var dataResendAg) async {
+    timeOutResend = Timer(Duration(seconds: 3), () {
+      resendAg(dataResendAg);
+    });
   }
 
   void _addDataToCheck(int start, end, var trans) {

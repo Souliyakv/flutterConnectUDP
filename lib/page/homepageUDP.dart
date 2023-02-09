@@ -73,15 +73,16 @@ class _CreateUDPState extends State<CreateUDP> {
           setState(() {
             data = utf8.decode(result);
           });
+          print("Commans is :${json.decode(data)['command']}");
           if (json.decode(data)['command'] == "ack") {
-            timeOutSend.cancel();
+            // timeOutSend.cancel();
             sendMessage(data);
           } else if (json.decode(data)['command'] == 'refund') {
             _sendRefunData(data);
           } else if (json.decode(data)['command'] == 'resend') {
             _resendData(data);
           } else if (json.decode(data)['command'] == 'ackResend') {
-            timeOutResend.cancel();
+            // timeOutResend.cancel();
             resend(data);
           } else if (json.decode(data)['command'] == 'sendTotal') {
             _sendTotal(data);
@@ -127,7 +128,7 @@ class _CreateUDPState extends State<CreateUDP> {
     // dataArrCheck.clear();
     _start.addAll({json.decode(dataSendTotal)['trans']: 0});
     _end.addAll({json.decode(dataSendTotal)['trans']: roundTosend});
-
+    missingIndex.addAll({json.decode(dataSendTotal)['trans']: []});
     setState(() {
       showImage == 0;
 
@@ -159,12 +160,18 @@ class _CreateUDPState extends State<CreateUDP> {
   }
 
   void _confirmToSend(var dataConfirmToSend) {
-    missingIndex.remove(json.decode(dataConfirmToSend)['trans']);
+    // missingIndex.remove(json.decode(dataConfirmToSend)['trans']);
 
     if (_start[json.decode(dataConfirmToSend)['trans']] >=
         total[json.decode(dataConfirmToSend)['trans']]) {
       print('Success1');
     } else {
+      // print(
+      //     "start is :${_start[json.decode(dataConfirmToSend)['trans']]} end is :${_end[json.decode(dataConfirmToSend)['trans']]} trans is :${json.decode(dataConfirmToSend)['trans']}");
+      _addDataToCheck(
+          _start[json.decode(dataConfirmToSend)['trans']],
+          _end[json.decode(dataConfirmToSend)['trans']],
+          json.decode(dataConfirmToSend)['trans']);
       var dataConfirm = {
         'data': {
           "start": _start[json.decode(dataConfirmToSend)['trans']],
@@ -246,7 +253,7 @@ class _CreateUDPState extends State<CreateUDP> {
         },
         "command": "send"
       };
-      waitTimeOutToSendAgain(dataToSend);
+      // waitTimeOutToSendAgain(dataToSend);
       this.socket.send(utf8.encode(jsonEncode(dataToSend)),
           InternetAddress("${IpAddress().ipAddress}"), 2222);
       sendIndex.update(
@@ -297,7 +304,7 @@ class _CreateUDPState extends State<CreateUDP> {
         },
         "command": "send"
       };
-      waitTimeOutToSendAgain(dataToSend);
+      // waitTimeOutToSendAgain(dataToSend);
       this.socket.send(utf8.encode(jsonEncode(dataToSend)),
           InternetAddress("${IpAddress().ipAddress}"), 2222);
       setState(() {
@@ -324,7 +331,7 @@ class _CreateUDPState extends State<CreateUDP> {
       "command": "resend"
     };
     this.socket.send(utf8.encode(jsonEncode(resend)),
-          InternetAddress("${IpAddress().ipAddress}"), 2222);
+        InternetAddress("${IpAddress().ipAddress}"), 2222);
   }
 
   void resend(var dataResend) {
@@ -353,7 +360,7 @@ class _CreateUDPState extends State<CreateUDP> {
       };
       this.socket.send(utf8.encode(jsonEncode(resend)),
           InternetAddress("${IpAddress().ipAddress}"), 2222);
-      waitTimeOutToResendAgain(dataResend);
+      // waitTimeOutToResendAgain(dataResend);
       resendIndex.update(
           json.decode(dataResend)['trans'],
           (value) =>
@@ -392,10 +399,11 @@ class _CreateUDPState extends State<CreateUDP> {
     if (json.decode(dataResend)['message'].length ==
         json.decode(dataResend)['sumData']) {
       if (json.decode(dataResend)['round'] == 1) {
-        waitTimeOutToCheck(dataResend);
+        // waitTimeOutToCheck(dataResend);
+        print('resend round 1');
         var resultRemove = _removeDataToCheck(dataResend);
         if (resultRemove == true) {
-          if (indexAdd > dataArr.length) {
+          if (indexAdd > dataArr[json.decode(dataResend)['trans']].length) {
             setState(() {
               showImage = 0;
               // message = json.decode(dataResend)['message'].toString();
@@ -419,7 +427,7 @@ class _CreateUDPState extends State<CreateUDP> {
       } else {
         var resultRemove = _removeDataToCheck(dataResend);
         if (resultRemove == true) {
-          if (indexAdd > dataArr.length) {
+          if (indexAdd > dataArr[json.decode(dataResend)['trans']].length) {
             // setState(() {
             // message = json.decode(dataResend)['message'].toString();
             // dataArr.add(message);
@@ -562,9 +570,9 @@ class _CreateUDPState extends State<CreateUDP> {
         if (json.decode(dataBuffer)['round'] == 1) {
           waitTimeOutToCheck(dataBuffer);
 
-          missingIndex.remove(json.decode(dataBuffer)['trans']);
-          _addDataToCheck(json.decode(dataBuffer)['start'],
-              json.decode(dataBuffer)['end'], json.decode(dataBuffer)['trans']);
+          // missingIndex.remove(json.decode(dataBuffer)['trans']);
+          // _addDataToCheck(json.decode(dataBuffer)['start'],
+          //     json.decode(dataBuffer)['end'], json.decode(dataBuffer)['trans']);
           var result = _removeDataToCheck(dataBuffer);
           if (result == true) {
             _removeAndAdds(dataBuffer);
@@ -583,9 +591,9 @@ class _CreateUDPState extends State<CreateUDP> {
       } else {
         if (json.decode(dataBuffer)['round'] == 1) {
           waitTimeOutToCheck(dataBuffer);
-          missingIndex.remove(json.decode(dataBuffer)['trans']);
-          _addDataToCheck(json.decode(dataBuffer)['start'],
-              json.decode(dataBuffer)['end'], json.decode(dataBuffer)['trans']);
+          // missingIndex.remove(json.decode(dataBuffer)['trans']);
+          // _addDataToCheck(json.decode(dataBuffer)['start'],
+          //     json.decode(dataBuffer)['end'], json.decode(dataBuffer)['trans']);
           var result = _removeDataToCheck(dataBuffer);
           if (result == true) {
             _removeAndAdds(dataBuffer);
@@ -622,7 +630,7 @@ class _CreateUDPState extends State<CreateUDP> {
   }
 
   Future<void> waitTimeOutToSendAgain(var dataSend) async {
-    timeOutSend = Timer(Duration(seconds: 3), () {
+    timeOutSend = Timer(Duration(seconds: 5), () {
       // print('PrinttimeOut');
       // _convertToImage(dataWait);
       sendAg(dataSend);
@@ -633,15 +641,18 @@ class _CreateUDPState extends State<CreateUDP> {
   }
 
   Future<void> waitTimeOutToResendAgain(var dataResendAg) async {
-    timeOutResend = Timer(Duration(seconds: 3), () {
+    timeOutResend = Timer(Duration(seconds: 5), () {
       resendAg(dataResendAg);
     });
   }
 
   void _addDataToCheck(int start, end, var trans) {
-    missingIndex.addAll({trans: []});
+    // print(missingIndex[trans]);
+    print("Start is :${start} End is :${end} Trans is :${trans}");
+
     for (var i = start; i < end; i++) {
       missingIndex[trans].add(i);
+      // print('Index is :${i}');
       // print('add data trans ${trans.toString()} index : ${i.toString()}');
     }
   }
@@ -674,13 +685,15 @@ class _CreateUDPState extends State<CreateUDP> {
 
   _removeDataToCheck(var removeAndCheck) {
     // print('remove data to check');
-    // print(missingIndex[trans]);
+    print(missingIndex[json.decode(removeAndCheck)['trans']]);
 
     // print('number remove is :' + number.toString());
     var result = missingIndex[json.decode(removeAndCheck)['trans']]
         .remove(json.decode(removeAndCheck)['index']);
     // print('trans is :' + trans.toString());
     // print('result remove is :' + result.toString());
+    print(
+        "trans is :${json.decode(removeAndCheck)['trans']} remove :${json.decode(removeAndCheck)['index']} result is :${result}");
     return result;
   }
 
@@ -703,6 +716,10 @@ class _CreateUDPState extends State<CreateUDP> {
     };
     this.socket.send(utf8.encode(jsonEncode(dataRefund)),
         InternetAddress("${IpAddress().ipAddress}"), 2222);
+    // print(dataRefund);
+    print('ref');
+    waitTimeOutToCheck(dataRef);
+
     // print('refund data');
   }
 

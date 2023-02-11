@@ -26,7 +26,6 @@ class _CreateUDPState extends State<CreateUDP> {
   var dataArr = {};
   var dataArrCheck = {};
   var missingIndex = {};
-  var checkTimerSend = {};
   final _textController = TextEditingController();
   final _username = TextEditingController();
   final _password = TextEditingController();
@@ -41,6 +40,8 @@ class _CreateUDPState extends State<CreateUDP> {
   late Timer timeOut;
   late Timer timeOutSend;
   late Timer timeOutResend;
+  var checkTimeout = {};
+  List<int> checkTimeoutIndex = [];
   // List<int> dataListRefund = [];
   var dataListRefund = {};
 
@@ -62,7 +63,7 @@ class _CreateUDPState extends State<CreateUDP> {
   late RawDatagramSocket socket;
   var allImageToShow = [];
   void login() async {
-    RawDatagramSocket.bind(InternetAddress.anyIPv4, 2222)
+    RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 2222)
         .then((RawDatagramSocket socket) {
       // Set the handler for receiving data
       this.socket = socket;
@@ -132,6 +133,8 @@ class _CreateUDPState extends State<CreateUDP> {
     _start.addAll({json.decode(dataSendTotal)['trans']: 0});
     _end.addAll({json.decode(dataSendTotal)['trans']: roundTosend});
     missingIndex.addAll({json.decode(dataSendTotal)['trans']: []});
+    checkTimeoutIndex.remove(json.decode(dataSendTotal)['trans']);
+    checkTimeoutIndex.add(json.decode(dataSendTotal)['trans']);
 
     setState(() {
       showImage == 0;
@@ -176,8 +179,9 @@ class _CreateUDPState extends State<CreateUDP> {
           _start[json.decode(dataConfirmToSend)['trans']],
           _end[json.decode(dataConfirmToSend)['trans']],
           json.decode(dataConfirmToSend)['trans']);
-      checkTimerSend.addAll({json.decode(dataConfirmToSend)['trans']: 0});
 
+      checkTimeout
+          .addAll({json.decode(dataConfirmToSend)['trans']: dataConfirmToSend});
       var dataConfirm = {
         'data': {
           "start": _start[json.decode(dataConfirmToSend)['trans']],
@@ -481,6 +485,7 @@ class _CreateUDPState extends State<CreateUDP> {
         missingIndex.remove(json.decode(dataConvert)['trans']);
         dataArr.remove(json.decode(dataConvert)['trans']);
         dataArrCheck.remove(json.decode(dataConvert)['trans']);
+        checkTimeoutIndex.remove(json.decode(dataConvert)['trans']);
         setState(() {
           String base64string = base64.encode(newList.cast<int>());
           imageFireResult = "data:image/jpg;base64,$base64string";
@@ -525,46 +530,55 @@ class _CreateUDPState extends State<CreateUDP> {
     //   waitTimeOutToCheck(dataBuffer);
     //   checkTimerSend.update(json.decode(dataBuffer)['trans'], (value) => 1);
     // }
-    if (json.decode(dataBuffer)['message'].length ==
-        json.decode(dataBuffer)['sumData']) {
-      if (json.decode(dataBuffer)['round'] == 1) {
-        print("push round 1");
-        waitTimeOutToCheck(dataBuffer);
-        // missingIndex.remove(json.decode(dataBuffer)['trans']);
-        // _addDataToCheck(json.decode(dataBuffer)['start'],
-        //     json.decode(dataBuffer)['end'], json.decode(dataBuffer)['trans']);
-        var result = _removeDataToCheck(dataBuffer);
-        if (result == true) {
-          _removeAndAdds(dataBuffer);
-          dataArrCheck[json.decode(dataBuffer)['trans']]
-              .add(json.decode(dataBuffer)['index']);
+    // dataArr
+    if (dataArr[json.decode(dataBuffer)['trans']] != null) {
+      if (json.decode(dataBuffer)['message'].length ==
+          json.decode(dataBuffer)['sumData']) {
+        if (json.decode(dataBuffer)['round'] == 1) {
+          print("push round 1");
+          waitTimeOutToCheck(dataBuffer);
+          // missingIndex.remove(json.decode(dataBuffer)['trans']);
+          // _addDataToCheck(json.decode(dataBuffer)['start'],
+          //     json.decode(dataBuffer)['end'], json.decode(dataBuffer)['trans']);
+          var result = _removeDataToCheck(dataBuffer);
+          if (result == true) {
+            _removeAndAdds(dataBuffer);
+            dataArrCheck[json.decode(dataBuffer)['trans']]
+                .add(json.decode(dataBuffer)['index']);
+          }
+        } else {
+          var result = _removeDataToCheck(dataBuffer);
+          if (result == true) {
+            _removeAndAdds(dataBuffer);
+            dataArrCheck[json.decode(dataBuffer)['trans']]
+                .add(json.decode(dataBuffer)['index']);
+          }
         }
-      } else {
-        var result = _removeDataToCheck(dataBuffer);
-        if (result == true) {
-          _removeAndAdds(dataBuffer);
-          dataArrCheck[json.decode(dataBuffer)['trans']]
-              .add(json.decode(dataBuffer)['index']);
+        if (json.decode(dataBuffer)['total'] ==
+            json.decode(dataBuffer)['round']) {
+          _convertToImage(dataBuffer);
         }
       }
-      if (json.decode(dataBuffer)['total'] ==
-          json.decode(dataBuffer)['round']) {
-        _convertToImage(dataBuffer);
-      }
+      setState(() {
+        double index =
+            double.parse(json.decode(dataBuffer)['index'].toString());
+        percent = index / totalToCheck[json.decode(dataBuffer)['trans']];
+        double cal = index * 100;
+        percenNumber = cal ~/ totalToCheck[json.decode(dataBuffer)['trans']];
+      });
     }
-    setState(() {
-      double index = double.parse(json.decode(dataBuffer)['index'].toString());
-      percent = index / totalToCheck[json.decode(dataBuffer)['trans']];
-      double cal = index * 100;
-      percenNumber = cal ~/ totalToCheck[json.decode(dataBuffer)['trans']];
-    });
     // print('pushBuffer to image');
   }
 
   Future<void> waitTimeOutToCheck(var dataWait) async {
     timeOut = Timer(Duration(seconds: 2), () {
       print('PrinttimeOut');
-      _convertToImage(dataWait);
+
+      if (dataArr[json.decode(dataWait)['trans']] != null) {
+        _convertToImage(dataWait);
+      } else {
+        timeOut.cancel();
+      }
     });
 
     // and later, before the timer goes off...
@@ -688,6 +702,7 @@ class _CreateUDPState extends State<CreateUDP> {
             icon: Icon(Icons.history)),
         IconButton(
             onPressed: () {
+              var ldata = [1, 2, 3, 4, 5, 6];
               var results = {
                 1: 3,
                 2: {
@@ -696,8 +711,8 @@ class _CreateUDPState extends State<CreateUDP> {
                 },
               };
               results.addAll({1: 5});
-
-              print(results[1]);
+              ldata.remove(5);
+              print(ldata);
             },
             icon: Icon(Icons.check)),
         IconButton(

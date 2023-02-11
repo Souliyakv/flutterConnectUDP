@@ -52,13 +52,14 @@ class _CreateUDPState extends State<CreateUDP> {
   var total = {};
   var totalToCheck = {};
   int roundTosend = 100;
+  int totalImageTosend = 0;
   var _start = {};
   // int _end = 100;
   var _end = {};
   int percenNumber = 0;
   var allImageToSend = {};
-  int allImageToSendKey = 0;
-  List<Uint8List> sperate = [];
+  List<int> allImageToSendKey = [];
+  // List<Uint8List> sperate = [];
   late Uint8List _bytes;
   late RawDatagramSocket socket;
   var allImageToShow = [];
@@ -91,6 +92,10 @@ class _CreateUDPState extends State<CreateUDP> {
             sendMessage(data);
           } else if (json.decode(data)['command'] == 'success') {
             allImageToSend.remove(json.decode(data)['trans']);
+            allImageToSendKey.remove(json.decode(data)['trans']);
+            setState(() {
+              totalImageTosend = allImageToSendKey.length;
+            });
           } else {
             _pushButterToImage(data);
           }
@@ -105,16 +110,19 @@ class _CreateUDPState extends State<CreateUDP> {
     });
   }
 
-  void send() {
+  void send(var index) {
+    print(allImageToSend[index].length);
+    print(index);
     var dataSend = {
       'data': {
-        'total': allImageToSend[allImageToSendKey].length,
+        'total': allImageToSend[index].length,
         'channel': _to.text,
-        'trans': allImageToSendKey,
+        'trans': index,
       },
       "token": _username.text,
       "command": 'sendTotal'
     };
+    print(dataSend);
     socket.send(utf8.encode(jsonEncode(dataSend)),
         InternetAddress("${IpAddress().ipAddress}"), 2222);
   }
@@ -388,13 +396,19 @@ class _CreateUDPState extends State<CreateUDP> {
       var image = await ImagePicker().getImage(source: ImageSource.gallery);
       file = File(image!.path);
       imagebytes = await file!.readAsBytes();
+      // print(imagebytes.length);
       var keyIndex;
       setState(() {
         totalBuffer = imagebytes.length;
         keyIndex = DateTime.now().millisecondsSinceEpoch;
-        allImageToSendKey = keyIndex;
       });
+      allImageToSendKey.add(keyIndex);
+
+      totalImageTosend = allImageToSendKey.length;
       int chunkSize = 2000;
+
+      List<Uint8List> sperate = [];
+      // sperate.clear();
       for (int i = 0; i < imagebytes.length; i += chunkSize) {
         int end = i + chunkSize < imagebytes.length
             ? i + chunkSize
@@ -402,6 +416,10 @@ class _CreateUDPState extends State<CreateUDP> {
         sperate.add(imagebytes.sublist(i, end));
       }
       allImageToSend.addAll({keyIndex: sperate});
+
+      // print(keyIndex);
+      // print(sperate.length);
+      // print(allImageToSendKey);
       _testText.text = sperate.length.toString();
     } catch (e) {
       print(e);
@@ -617,61 +635,58 @@ class _CreateUDPState extends State<CreateUDP> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(actions: [
-        IconButton(
-            onPressed: () {
-              setState(() {
-                showImage = 0;
-                totalBufferTo = 0;
-              });
-              allImageToShow.clear();
-              _end.clear();
-              missingIndex.clear();
-            },
-            icon: Icon(Icons.cancel)),
- 
-        IconButton(
-            onPressed: () {
-              var ldata = [1, 2, 3, 4, 5, 6];
-              var results = {
-                1: 3,
-                2: {
-                  1: [1, 2, 3],
-                  2: [4, 5, 6]
+      appBar: AppBar(
+          title: Text("ຈຳນວນ ${totalImageTosend} ຮູບ ${allImageToShow}"),
+          actions: [
+            IconButton(
+                onPressed: () {
+                  setState(() {
+                    showImage = 0;
+                    totalBufferTo = 0;
+                  });
+                  allImageToShow.clear();
+                  _end.clear();
+                  missingIndex.clear();
                 },
-              };
-              results.addAll({1: 5});
-              ldata.remove(5);
-              print(ldata);
-            },
-            icon: Icon(Icons.check)),
-        IconButton(
-            onPressed: () {
-              List<dynamic> newList = [];
+                icon: Icon(Icons.cancel)),
+            IconButton(
+                onPressed: () {
+                  for (var i = 0; i < allImageToSendKey.length; i++) {
+                    // sendIndex.addAll({allImageToSendKey[i]: 0});
+                    // print('ho${i}');
+                    // print(allImageToSendKey);
+                    // print(allImageToSendKey[i]);
+                    // print(allImageToSend[allImageToSendKey[i]]);
+                    // print(allImageToSendKey[i]);
+                    // print(allImageToSend[allImageToSendKey[i]].length);
 
-              for (int i = 0; i < dataArr.length; i++) {
-                newList.addAll(jsonDecode(dataArr[i].toString()));
-              }
-              setState(() {
-                String base64string = base64.encode(newList.cast<int>());
-                imageFireResult = "data:image/jpg;base64,$base64string";
-                String uri = imageFireResult.toString();
-                _bytes = base64.decode(uri.split(',').last);
-                _testText.text = imageFireResult;
-                showImage = 1;
-                totalBufferTo = newList.length;
-              });
-            },
-            icon: Icon(Icons.send)),
-        IconButton(
-            onPressed: () {
-              // chunk.clear();
-              sperate.clear();
-              allImageToSend.clear();
-              chooseImage(context);
-            },
-            icon: Icon((Icons.get_app)))
-      ]),
+                    // send(allImageToSendKey[i]);
+                  }
+                  print(allImageToSend.values);
+                },
+                icon: Icon(Icons.check)),
+            IconButton(
+                onPressed: () {
+                  var results = {};
+                  results.addAll({
+                    3: [1, 2]
+                  });
+                  results.addAll({
+                    4: [3, 4]
+                  });
+
+                  print(results[4].length);
+                },
+                icon: Icon(Icons.send)),
+            IconButton(
+                onPressed: () {
+                  // chunk.clear();
+
+                  // allImageToSend.clear();
+                  chooseImage(context);
+                },
+                icon: Icon((Icons.get_app)))
+          ]),
       body: SingleChildScrollView(
         child: Column(children: [
           showImage == 0
@@ -770,8 +785,8 @@ class _CreateUDPState extends State<CreateUDP> {
           TextButton(
               onPressed: () {
                 if (_textController.text.isNotEmpty && _to.text.isNotEmpty) {
-                  if (allImageToSend[allImageToSendKey] == null ||
-                      allImageToSendKey == 0) {
+                  if (allImageToSend.length <= 0 ||
+                      allImageToSendKey.length <= 0) {
                     showDialog(
                       context: context,
                       builder: (context) {
@@ -788,14 +803,12 @@ class _CreateUDPState extends State<CreateUDP> {
                       },
                     );
                   } else {
-                    // setState(() {
-                    //   sendIndex = 0;
-                    // });
-                    sendIndex.addAll({allImageToSendKey: 0});
-                    print('ho');
+                    for (var i = 0; i < allImageToSendKey.length; i++) {
+                      sendIndex.addAll({allImageToSendKey[i]: 0});
+                      print('ho${i}');
 
-                    // sendMessage();
-                    send();
+                      send(allImageToSendKey[i]);
+                    }
                   }
                 }
               },

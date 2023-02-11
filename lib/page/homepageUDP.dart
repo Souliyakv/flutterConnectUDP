@@ -26,6 +26,7 @@ class _CreateUDPState extends State<CreateUDP> {
   var dataArr = {};
   var dataArrCheck = {};
   var missingIndex = {};
+  var checkTimerSend = {};
   final _textController = TextEditingController();
   final _username = TextEditingController();
   final _password = TextEditingController();
@@ -61,7 +62,7 @@ class _CreateUDPState extends State<CreateUDP> {
   late RawDatagramSocket socket;
   var allImageToShow = [];
   void login() async {
-    RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 2222)
+    RawDatagramSocket.bind(InternetAddress.anyIPv4, 2222)
         .then((RawDatagramSocket socket) {
       // Set the handler for receiving data
       this.socket = socket;
@@ -73,7 +74,7 @@ class _CreateUDPState extends State<CreateUDP> {
           setState(() {
             data = utf8.decode(result);
           });
-          print("Commans is :${json.decode(data)['command']}");
+          print("Command is :${json.decode(data)['command']}");
           if (json.decode(data)['command'] == "ack") {
             // timeOutSend.cancel();
             sendMessage(data);
@@ -95,6 +96,8 @@ class _CreateUDPState extends State<CreateUDP> {
           } else if (json.decode(data)['command'] == 'success') {
             allImageToSend.remove(json.decode(data)['trans']);
           } else {
+            // print("round :${json.decode(data)['round']}");
+
             _pushButterToImage(data);
           }
         }
@@ -129,6 +132,7 @@ class _CreateUDPState extends State<CreateUDP> {
     _start.addAll({json.decode(dataSendTotal)['trans']: 0});
     _end.addAll({json.decode(dataSendTotal)['trans']: roundTosend});
     missingIndex.addAll({json.decode(dataSendTotal)['trans']: []});
+
     setState(() {
       showImage == 0;
 
@@ -172,6 +176,8 @@ class _CreateUDPState extends State<CreateUDP> {
           _start[json.decode(dataConfirmToSend)['trans']],
           _end[json.decode(dataConfirmToSend)['trans']],
           json.decode(dataConfirmToSend)['trans']);
+      checkTimerSend.addAll({json.decode(dataConfirmToSend)['trans']: 0});
+
       var dataConfirm = {
         'data': {
           "start": _start[json.decode(dataConfirmToSend)['trans']],
@@ -381,13 +387,6 @@ class _CreateUDPState extends State<CreateUDP> {
     resendIndex.addAll({json.decode(dataRefund)['trans']: 0});
     dataListRefund.addAll(
         {json.decode(dataRefund)['trans']: json.decode(dataRefund)['message']});
-    // setState(() {
-    //   // address = json.decode(dataRefund)['address'];
-    //   // port = json.decode(dataRefund)['port'];
-    //   // resendIndex = 0;
-    //   dataListRefund = [...json.decode(dataRefund)['message']];
-    // });
-
     resend(dataRefund);
     // print('send refund');
   }
@@ -398,55 +397,13 @@ class _CreateUDPState extends State<CreateUDP> {
     // print('index Delete:' + index.toString());
     if (json.decode(dataResend)['message'].length ==
         json.decode(dataResend)['sumData']) {
-      if (json.decode(dataResend)['round'] == 1) {
-        // waitTimeOutToCheck(dataResend);
-        print('resend round 1');
-        var resultRemove = _removeDataToCheck(dataResend);
-        if (resultRemove == true) {
-          if (indexAdd > dataArr[json.decode(dataResend)['trans']].length) {
-            setState(() {
-              showImage = 0;
-              // message = json.decode(dataResend)['message'].toString();
-              // dataArr.add(message);
-            });
-            _removeAndAdds(dataResend);
-            dataArrCheck[json.decode(dataResend)['trans']]
-                .add(json.decode(dataResend)['index']);
-          } else {
-            setState(() {
-              showImage = 0;
-              // message = json.decode(dataResend)['message'].toString();
-              // dataArr.add(message);
-
-              dataArrCheck[json.decode(dataResend)['trans']]
-                  .add(json.decode(dataResend)['index']);
-            });
-            _removeAndAdds(dataResend);
-          }
-        }
-      } else {
-        var resultRemove = _removeDataToCheck(dataResend);
-        if (resultRemove == true) {
-          if (indexAdd > dataArr[json.decode(dataResend)['trans']].length) {
-            // setState(() {
-            // message = json.decode(dataResend)['message'].toString();
-            // dataArr.add(message);
-            _removeAndAdds(dataResend);
-            dataArrCheck[json.decode(dataResend)['trans']]
-                .add(json.decode(dataResend)['index']);
-            // });
-          } else {
-            // setState(() {
-            //   message = json.decode(dataResend)['message'].toString();
-            //   // dataArr.add(message);
-
-            // });
-            _removeAndAdds(dataResend);
-            dataArrCheck[json.decode(dataResend)['trans']]
-                .add(json.decode(dataResend)['index']);
-          }
-        }
+      var resultRemove = _removeDataToCheck(dataResend);
+      if (resultRemove == true) {
+        _removeAndAdds(dataResend);
+        dataArrCheck[json.decode(dataResend)['trans']]
+            .add(json.decode(dataResend)['index']);
       }
+
       if (json.decode(dataResend)['round'] ==
           json.decode(dataResend)['total']) {
         _convertToImage(dataResend);
@@ -505,6 +462,7 @@ class _CreateUDPState extends State<CreateUDP> {
 
   void _convertToImage(var dataConvert) {
     timeOut.cancel();
+
     List<dynamic> newList = [];
     newList.clear();
 
@@ -561,53 +519,37 @@ class _CreateUDPState extends State<CreateUDP> {
   void _pushButterToImage(String dataBuffer) {
     // print(json.decode(dataBuffer)['round']);
     // print(json.decode(dataBuffer)['message'].runtimeType);
-    // print(json.decode(dataBuffer)['round']);
+    // print("round :${json.decode(dataBuffer)['round']}");
     // print(json.decode(dataBuffer)['index']);
+    // if (checkTimerSend[json.decode(dataBuffer)['trans']] == 0) {
+    //   waitTimeOutToCheck(dataBuffer);
+    //   checkTimerSend.update(json.decode(dataBuffer)['trans'], (value) => 1);
+    // }
     if (json.decode(dataBuffer)['message'].length ==
         json.decode(dataBuffer)['sumData']) {
+      if (json.decode(dataBuffer)['round'] == 1) {
+        print("push round 1");
+        waitTimeOutToCheck(dataBuffer);
+        // missingIndex.remove(json.decode(dataBuffer)['trans']);
+        // _addDataToCheck(json.decode(dataBuffer)['start'],
+        //     json.decode(dataBuffer)['end'], json.decode(dataBuffer)['trans']);
+        var result = _removeDataToCheck(dataBuffer);
+        if (result == true) {
+          _removeAndAdds(dataBuffer);
+          dataArrCheck[json.decode(dataBuffer)['trans']]
+              .add(json.decode(dataBuffer)['index']);
+        }
+      } else {
+        var result = _removeDataToCheck(dataBuffer);
+        if (result == true) {
+          _removeAndAdds(dataBuffer);
+          dataArrCheck[json.decode(dataBuffer)['trans']]
+              .add(json.decode(dataBuffer)['index']);
+        }
+      }
       if (json.decode(dataBuffer)['total'] ==
           json.decode(dataBuffer)['round']) {
-        if (json.decode(dataBuffer)['round'] == 1) {
-          waitTimeOutToCheck(dataBuffer);
-
-          // missingIndex.remove(json.decode(dataBuffer)['trans']);
-          // _addDataToCheck(json.decode(dataBuffer)['start'],
-          //     json.decode(dataBuffer)['end'], json.decode(dataBuffer)['trans']);
-          var result = _removeDataToCheck(dataBuffer);
-          if (result == true) {
-            _removeAndAdds(dataBuffer);
-            dataArrCheck[json.decode(dataBuffer)['trans']]
-                .add(json.decode(dataBuffer)['index']);
-          }
-        } else {
-          var result = _removeDataToCheck(dataBuffer);
-          if (result == true) {
-            _removeAndAdds(dataBuffer);
-            dataArrCheck[json.decode(dataBuffer)['trans']]
-                .add(json.decode(dataBuffer)['index']);
-          }
-        }
         _convertToImage(dataBuffer);
-      } else {
-        if (json.decode(dataBuffer)['round'] == 1) {
-          waitTimeOutToCheck(dataBuffer);
-          // missingIndex.remove(json.decode(dataBuffer)['trans']);
-          // _addDataToCheck(json.decode(dataBuffer)['start'],
-          //     json.decode(dataBuffer)['end'], json.decode(dataBuffer)['trans']);
-          var result = _removeDataToCheck(dataBuffer);
-          if (result == true) {
-            _removeAndAdds(dataBuffer);
-            dataArrCheck[json.decode(dataBuffer)['trans']]
-                .add(json.decode(dataBuffer)['index']);
-          }
-        } else {
-          var result = _removeDataToCheck(dataBuffer);
-          if (result == true) {
-            _removeAndAdds(dataBuffer);
-            dataArrCheck[json.decode(dataBuffer)['trans']]
-                .add(json.decode(dataBuffer)['index']);
-          }
-        }
       }
     }
     setState(() {
@@ -655,6 +597,7 @@ class _CreateUDPState extends State<CreateUDP> {
       // print('Index is :${i}');
       // print('add data trans ${trans.toString()} index : ${i.toString()}');
     }
+    // print(missingIndex[trans]);
   }
 
   void _genData(var dataGen) {
@@ -717,7 +660,6 @@ class _CreateUDPState extends State<CreateUDP> {
     this.socket.send(utf8.encode(jsonEncode(dataRefund)),
         InternetAddress("${IpAddress().ipAddress}"), 2222);
     // print(dataRefund);
-    print('ref');
     waitTimeOutToCheck(dataRef);
 
     // print('refund data');
@@ -731,6 +673,7 @@ class _CreateUDPState extends State<CreateUDP> {
             onPressed: () {
               setState(() {
                 showImage = 0;
+                totalBufferTo = 0;
               });
               allImageToShow.clear();
               _end.clear();
@@ -745,12 +688,16 @@ class _CreateUDPState extends State<CreateUDP> {
             icon: Icon(Icons.history)),
         IconButton(
             onPressed: () {
-              // var results1 = {
-              //   1: 3,
-              //   2: [6, 7, 8, 9],
-              // };
-              // results1[2]!.remove();
-              // print(results1);
+              var results = {
+                1: 3,
+                2: {
+                  1: [1, 2, 3],
+                  2: [4, 5, 6]
+                },
+              };
+              results.addAll({1: 5});
+
+              print(results[1]);
             },
             icon: Icon(Icons.check)),
         IconButton(
@@ -819,43 +766,53 @@ class _CreateUDPState extends State<CreateUDP> {
             controller: _testText,
           ),
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(5.0),
             child: TextField(
               controller: _username,
-              decoration: InputDecoration(hintText: "ຜຸ້ສົ່ງ"),
+              decoration: InputDecoration(
+                  hintText: "ຜຸ້ສົ່ງ",
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10))),
             ),
           ),
           const SizedBox(
             height: 15,
           ),
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(5.0),
             child: TextField(
               controller: _password,
-              decoration: InputDecoration(hintText: "ລະຫັດຜ່ານ"),
+              decoration: InputDecoration(
+                  hintText: "ລະຫັດຜ່ານ",
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10))),
             ),
           ),
           const SizedBox(
             height: 15,
           ),
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(5.0),
             child: TextField(
               keyboardType: TextInputType.number,
               controller: _to,
-              decoration: InputDecoration(hintText: "ຜຸ້ຮັບ"),
+              decoration: InputDecoration(
+                  hintText: "ຜຸ້ຮັບ",
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10))),
             ),
           ),
           const SizedBox(
             height: 15,
           ),
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(5.0),
             child: TextField(
               controller: _textController,
               decoration: InputDecoration(
-                hintText: 'Enter message',
-              ),
+                  hintText: 'Enter message',
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10))),
             ),
           ),
           TextButton(

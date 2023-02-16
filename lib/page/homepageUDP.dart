@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:demoudp/widget/config.dart';
+import 'package:demoudp/widget/showAlert.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -96,6 +97,9 @@ class _CreateUDPState extends State<CreateUDP> {
             setState(() {
               totalImageTosend = allImageToSendKey.length;
             });
+          } else if (json.decode(data)['command'] == 'NoUser') {
+            ShowAlert.showAlert(context,
+                'ບໍ່ມີຊື່ຜູ້ໃຊ້ ${json.decode(data)['username']} ຢູ່ໃນລະບົບ');
           } else {
             _pushButterToImage(data);
           }
@@ -754,7 +758,7 @@ class _CreateUDPState extends State<CreateUDP> {
           Padding(
             padding: const EdgeInsets.all(5.0),
             child: TextField(
-              keyboardType: TextInputType.number,
+              keyboardType: TextInputType.text,
               controller: _to,
               decoration: InputDecoration(
                   hintText: "ຜຸ້ຮັບ",

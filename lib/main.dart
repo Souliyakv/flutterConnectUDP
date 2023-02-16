@@ -1,5 +1,6 @@
 import 'package:demoudp/page/chatPage.dart';
 import 'package:demoudp/page/homepageUDP.dart';
+import 'package:demoudp/page/loginPage.dart';
 import 'package:demoudp/page/myhomepage.dart';
 import 'package:flutter/material.dart';
 
@@ -15,7 +16,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: ChatsPage(),
+      home: LoginPage(),
     );
   }
 }

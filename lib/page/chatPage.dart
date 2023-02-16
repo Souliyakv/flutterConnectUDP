@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/container.dart';
-import 'package:flutter/src/widgets/framework.dart';
+
 
 class ChatsPage extends StatefulWidget {
   const ChatsPage({super.key});
@@ -21,15 +20,23 @@ class _ChatsPageState extends State<ChatsPage> {
         itemCount: 1,
         itemBuilder: (context, index) {
           return ListTile(
-            title: Text("Somchit"),
-            subtitle: Text("ໂດຍຍ"),
+            title: Text("Luck"),
+            subtitle: Row(
+              children: const [
+                Icon(
+                  Icons.check,
+                  size: 20,
+                ),
+                Text("ໂດຍຍ"),
+              ],
+            ),
             trailing: Text("14/2/23"),
             leading: Container(
               decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   image: const DecorationImage(
                       image: NetworkImage(
-                          "https://parade.com/.image/t_share/MTkwNTgxMzY0NzA2ODQ1ODIx/whats-world-population-jpg.jpg"),
+                          "https://img.freepik.com/premium-photo/portrait-adult-thai-student-university-student-uniform-asian-beautiful-young-girl-standing_477666-2194.jpg?w=2000"),
                       fit: BoxFit.cover)),
               height: 40,
               width: 40,

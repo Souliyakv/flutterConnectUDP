@@ -1,3 +1,5 @@
+import 'package:demoudp/page/chatPage.dart';
+import 'package:demoudp/widget/roundedButton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/container.dart';
 import 'package:flutter/src/widgets/framework.dart';
@@ -65,7 +67,24 @@ class _LoginPageState extends State<LoginPage> {
                       }
                       return null;
                     },
-                  )
+                  ),
+                  SizedBox(
+                    height: 25,
+                  ),
+                  RoundedButton(
+                      onPressed: () {
+                        if (formkey.currentState!.validate()) {
+                          Navigator.push(context, MaterialPageRoute(
+                            builder: (context) {
+                              return ChatPage(
+                                  username: username.text,
+                                  password: password.text,
+                                  channel: channel.text);
+                            },
+                          ));
+                        }
+                      },
+                      text: "ເຂົ້າສູ່ລະບົບ")
                 ],
               ),
             ),

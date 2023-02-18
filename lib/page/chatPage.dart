@@ -148,7 +148,8 @@ class _ChatPageState extends State<ChatPage> {
                 sender: json.decode(data)['sender'],
                 hour: json.decode(data)['hour'],
                 minute: json.decode(data)['minute'],
-                channel: json.decode(data)['channel']);
+                channel: json.decode(data)['channel'],
+                type: json.decode(data)['type']);
             var provider =
                 Provider.of<TextMessageProvider>(context, listen: false);
             provider.addTextMessage(textMessageModel);
@@ -796,26 +797,13 @@ class _ChatPageState extends State<ChatPage> {
                     icon: Icon(Icons.camera_alt_sharp)),
                 suffixIcon: IconButton(
                     onPressed: () {
-                      // addMessage(
-                      //     txtMessage.text,
-                      //     _username,
-                      //     DateTime.now().hour.toString(),
-                      //     DateTime.now().minute.toString());
-                      // sendtxtMessage(
-                      //     txtMessage.text,
-                      //     _username,
-                      //     DateTime.now().hour.toString(),
-                      //     DateTime.now().minute.toString());
-                      // txtMessage.clear();
-                      // setState(() {
-                      //   testData;
-                      // });
                       TextMessageModel textMessageModel = TextMessageModel(
                           message: txtMessage.text,
                           sender: _username,
                           hour: DateTime.now().hour.toString(),
                           minute: DateTime.now().minute.toString(),
-                          channel: _to);
+                          channel: _to,
+                          type: "TEXT");
                       var provider = Provider.of<TextMessageProvider>(context,
                           listen: false);
                       provider.addTextMessage(textMessageModel);
@@ -854,13 +842,23 @@ class _ChatPageState extends State<ChatPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                GestureDetector(
-                                    onLongPress: () {
-                                      Clipboard.setData(new ClipboardData(
-                                          text: dataMessage.message));
-                                    },
-                                    child:
-                                        Text(dataMessage.message.toString())),
+                                dataMessage.type == "TEXT"
+                                    ? GestureDetector(
+                                        onLongPress: () {
+                                          Clipboard.setData(new ClipboardData(
+                                              text: dataMessage.message));
+                                        },
+                                        child: Text(
+                                            dataMessage.message.toString()))
+                                    : Container(
+                                        height: 200,
+                                        width: 200,
+                                        decoration: BoxDecoration(
+                                            image: DecorationImage(
+                                                image: NetworkImage(
+                                                    "${dataMessage.message}"),
+                                                fit: BoxFit.cover)),
+                                      ),
                                 Text(
                                   '${dataMessage.hour}:${dataMessage.minute} ນ',
                                   style: TextStyle(fontSize: 10),
@@ -885,12 +883,23 @@ class _ChatPageState extends State<ChatPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              GestureDetector(
-                                  onLongPress: () {
-                                    Clipboard.setData(new ClipboardData(
-                                        text: dataMessage.message));
-                                  },
-                                  child: Text(dataMessage.message.toString())),
+                              dataMessage.type == "TEXT"
+                                  ? GestureDetector(
+                                      onLongPress: () {
+                                        Clipboard.setData(new ClipboardData(
+                                            text: dataMessage.message));
+                                      },
+                                      child:
+                                          Text(dataMessage.message.toString()))
+                                  : Container(
+                                      height: 200,
+                                      width: 200,
+                                      decoration: BoxDecoration(
+                                          image: DecorationImage(
+                                              image: NetworkImage(
+                                                  "${dataMessage.message}"),
+                                              fit: BoxFit.cover)),
+                                    ),
                               Text(
                                 '${dataMessage.hour}:${dataMessage.minute} ນ',
                                 style: TextStyle(fontSize: 10),

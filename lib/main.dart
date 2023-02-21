@@ -1,4 +1,7 @@
 import 'package:demoudp/page/loginPage.dart';
+import 'package:demoudp/providers/connectSocketUDP_provider.dart';
+import 'package:demoudp/providers/imageProvider.dart';
+import 'package:demoudp/providers/statusTypingProvider.dart';
 import 'package:demoudp/providers/textMessage_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -17,11 +20,20 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) {
           return TextMessageProvider();
         }),
+        ChangeNotifierProvider(create: (context) {
+          return ConnectSocketUDPProvider();
+        }),
+        ChangeNotifierProvider(create: (context){
+          return StatusTypingProvider();
+        }),
+        ChangeNotifierProvider(create: (context){
+          return ChooseImageProvider();
+        })
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: ThemeData(primarySwatch: Colors.blue),
-        home: LoginPage(),
+        home:const LoginPage(),
       ),
     );
   }

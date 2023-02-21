@@ -1,8 +1,9 @@
+import 'package:demoudp/model/connectSocketUDP_model.dart';
 import 'package:demoudp/page/chatPage.dart';
+import 'package:demoudp/providers/connectSocketUDP_provider.dart';
 import 'package:demoudp/widget/roundedButton.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/container.dart';
-import 'package:flutter/src/widgets/framework.dart';
+import 'package:provider/provider.dart';
 
 import '../widget/roundedInputField.dart';
 
@@ -40,7 +41,7 @@ class _LoginPageState extends State<LoginPage> {
                       return null;
                     },
                   ),
-                  SizedBox(
+                  const SizedBox(
                     height: 15,
                   ),
                   RoundedInPutField(
@@ -54,7 +55,7 @@ class _LoginPageState extends State<LoginPage> {
                       return null;
                     },
                   ),
-                  SizedBox(
+                  const SizedBox(
                     height: 15,
                   ),
                   RoundedInPutField(
@@ -68,12 +69,18 @@ class _LoginPageState extends State<LoginPage> {
                       return null;
                     },
                   ),
-                  SizedBox(
+                  const SizedBox(
                     height: 25,
                   ),
                   RoundedButton(
                       onPressed: () {
                         if (formkey.currentState!.validate()) {
+                          LoginModel loginMD = LoginModel(
+                              username: username.text, password: password.text);
+                          var provider = Provider.of<ConnectSocketUDPProvider>(
+                              context,
+                              listen: false);
+                          provider.login(loginMD, context);
                           Navigator.push(context, MaterialPageRoute(
                             builder: (context) {
                               return ChatPage(

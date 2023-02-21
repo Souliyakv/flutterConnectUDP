@@ -1,11 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:demoudp/model/imageModel.dart';
 import 'package:demoudp/model/textMessage_model.dart';
+import 'package:demoudp/model/typingStatusModel.dart';
+import 'package:demoudp/providers/connectSocketUDP_provider.dart';
+import 'package:demoudp/providers/imageProvider.dart';
+import 'package:demoudp/providers/statusTypingProvider.dart';
 import 'package:demoudp/providers/textMessage_provider.dart';
 import 'package:demoudp/widget/config.dart';
 import 'package:demoudp/widget/showAlert.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -37,7 +41,7 @@ class _ChatPageState extends State<ChatPage> {
       _password = widget.password;
       _to = widget.channel;
     });
-    login();
+    // login();
   }
 
   @override
@@ -50,10 +54,22 @@ class _ChatPageState extends State<ChatPage> {
   FocusNode _focusNode = FocusNode();
 
   void _onFocusChange() {
+    var pvdConnect =
+        Provider.of<ConnectSocketUDPProvider>(context, listen: false);
     if (_focusNode.hasFocus) {
-      sendstatusTyping(true);
+      SendTypingStatusModel sendstatus =
+          SendTypingStatusModel(status: true, channel: _to, token: _username);
+      pvdConnect.sendstatusTyping(sendstatus);
+      setState(() {
+        sendImage = false;
+      });
     } else {
-      sendstatusTyping(false);
+      SendTypingStatusModel sendstatus =
+          SendTypingStatusModel(status: false, channel: _to, token: _username);
+      pvdConnect.sendstatusTyping(sendstatus);
+      setState(() {
+        sendImage = true;
+      });
     }
   }
 
@@ -64,6 +80,7 @@ class _ChatPageState extends State<ChatPage> {
   late String message;
   var dataArr = {};
   var dataArrCheck = {};
+  bool sendImage = false;
   var missingIndex = {};
   final txtMessage = TextEditingController();
   late String _username;
@@ -84,7 +101,6 @@ class _ChatPageState extends State<ChatPage> {
   var dataListRefund = {};
 
   int totalBuffer = 0;
-  late bool typing = false;
   int totalBufferTo = 0;
   var total = {};
   var totalToCheck = {};
@@ -101,7 +117,7 @@ class _ChatPageState extends State<ChatPage> {
   late RawDatagramSocket socket;
   var allImageToShow = [];
   void login() async {
-    RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 2222)
+    RawDatagramSocket.bind(InternetAddress.anyIPv4, 2222)
         .then((RawDatagramSocket socket) {
       this.socket = socket;
       this.socket.listen((RawSocketEvent event) {
@@ -135,28 +151,20 @@ class _ChatPageState extends State<ChatPage> {
             ShowAlert.showAlert(context,
                 'ບໍ່ມີຊື່ຜູ້ໃຊ້ ${json.decode(data)['username']} ຢູ່ໃນລະບົບ');
           } else if (json.decode(data)['command'] == 'txtsend') {
-            // addMessage(
-            //     json.decode(data)['message'],
-            //     json.decode(data)['sender'],
-            //     json.decode(data)['hour'],
-            //     json.decode(data)['minute']);
-            // setState(() {
-            //   testData;
-            // });
-            TextMessageModel textMessageModel = TextMessageModel(
-                message: json.decode(data)['message'],
-                sender: json.decode(data)['sender'],
-                hour: json.decode(data)['hour'],
-                minute: json.decode(data)['minute'],
-                channel: json.decode(data)['channel'],
-                type: json.decode(data)['type']);
-            var provider =
-                Provider.of<TextMessageProvider>(context, listen: false);
-            provider.addTextMessage(textMessageModel);
+            // TextMessageModel textMessageModel = TextMessageModel(
+            //     message: json.decode(data)['message'],
+            //     sender: json.decode(data)['sender'],
+            //     hour: json.decode(data)['hour'],
+            //     minute: json.decode(data)['minute'],
+            //     channel: json.decode(data)['channel'],
+            //     type: json.decode(data)['type']);
+            // var provider =
+            //     Provider.of<TextMessageProvider>(context, listen: false);
+            // provider.addTextMessage(textMessageModel);
           } else if (json.decode(data)['command'] == 'typingStatus') {
-            setState(() {
-              typing = json.decode(data)['status'];
-            });
+            // setState(() {
+            //   typing = json.decode(data)['status'];
+            // });
           } else {
             _pushButterToImage(data);
           }
@@ -186,19 +194,19 @@ class _ChatPageState extends State<ChatPage> {
         InternetAddress("${IpAddress().ipAddress}"), 2222);
   }
 
-  void sendstatusTyping(bool status) {
-    var sendStatus = {
-      "data": {
-        "status": status,
-        "channel": _to,
-      },
-      "token": _username,
-      "command": "typingStatus"
-    };
-    print(sendStatus);
-    this.socket.send(utf8.encode(jsonEncode(sendStatus)),
-        InternetAddress("${IpAddress().ipAddress}"), 2222);
-  }
+  // void sendstatusTyping(bool status) {
+  //   var sendStatus = {
+  //     "data": {
+  //       "status": status,
+  //       "channel": _to,
+  //     },
+  //     "token": _username,
+  //     "command": "typingStatus"
+  //   };
+  //   print(sendStatus);
+  //   this.socket.send(utf8.encode(jsonEncode(sendStatus)),
+  //       InternetAddress("${IpAddress().ipAddress}"), 2222);
+  // }
 
   void _sendTotal(var dataSendTotal) {
     _start.addAll({json.decode(dataSendTotal)['trans']: 0});
@@ -328,22 +336,22 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  void sendtxtMessage(String message, sender, hour, minute) {
-    var txtdataToSend = {
-      "data": {
-        "message": message,
-        "channel": _to,
-        "type": "TEXT",
-        "sender": sender,
-        "hour": hour,
-        "minute": minute
-      },
-      "token": _username,
-      "command": "txtsend"
-    };
-    this.socket.send(utf8.encode(jsonEncode(txtdataToSend)),
-        InternetAddress("${IpAddress().ipAddress}"), 2222);
-  }
+  // void sendtxtMessage(String message, sender, hour, minute) {
+  //   var txtdataToSend = {
+  //     "data": {
+  //       "message": message,
+  //       "channel": _to,
+  //       "type": "TEXT",
+  //       "sender": sender,
+  //       "hour": hour,
+  //       "minute": minute
+  //     },
+  //     "token": _username,
+  //     "command": "txtsend"
+  //   };
+  //   this.socket.send(utf8.encode(jsonEncode(txtdataToSend)),
+  //       InternetAddress("${IpAddress().ipAddress}"), 2222);
+  // }
 
   void sendAg(var sendAgain) {
     timeOutSend.cancel();
@@ -490,7 +498,7 @@ class _ChatPageState extends State<ChatPage> {
         totalBuffer = imagebytes.length;
         keyIndex = DateTime.now().millisecondsSinceEpoch;
       });
-      allImageToSendKey.add(keyIndex);
+      // allImageToSendKey.add(keyIndex);
 
       totalImageTosend = allImageToSendKey.length;
       int chunkSize = 2000;
@@ -503,12 +511,13 @@ class _ChatPageState extends State<ChatPage> {
             : imagebytes.length;
         sperate.add(imagebytes.sublist(i, end));
       }
-      allImageToSend.addAll({keyIndex: sperate});
+      // allImageToSend.addAll({keyIndex: sperate});
+      ChooseImageModel chooseImageModel =
+          ChooseImageModel(keyIndex: keyIndex, sperate: sperate);
 
-      // print(keyIndex);
-      // print(sperate.length);
-      // print(allImageToSendKey);
-
+      var pvdChooseImage =
+          Provider.of<ChooseImageProvider>(context, listen: false);
+      pvdChooseImage.addImageToSend(chooseImageModel);
     } catch (e) {
       print(e);
     }
@@ -718,14 +727,28 @@ class _ChatPageState extends State<ChatPage> {
     // print('refund data');
   }
 
-  void addMessage(String msg, sender, hour, minute) {
-    testData.insert(
-      0,
-      {"message": msg, "sender": sender, "hour": hour, "minute": minute},
-    );
+  void sendtxtMessage() {
+    TextMessageModel textMessageModel = TextMessageModel(
+        message: txtMessage.text,
+        sender: _username,
+        hour: DateTime.now().hour.toString(),
+        minute: DateTime.now().minute.toString(),
+        channel: _to,
+        type: "TEXT");
+    var provider = Provider.of<TextMessageProvider>(context, listen: false);
+    var pvdConnect =
+        Provider.of<ConnectSocketUDPProvider>(context, listen: false);
+    provider.addTextMessage(textMessageModel);
+    SendTextMessageModel sendtxtData = SendTextMessageModel(
+        message: txtMessage.text,
+        channel: _to,
+        sender: _username,
+        hour: DateTime.now().hour.toString(),
+        minute: DateTime.now().minute.toString(),
+        token: _username);
+    pvdConnect.sendtxtMessage(sendtxtData);
+    txtMessage.clear();
   }
-
-  var testData = [];
 
   @override
   Widget build(BuildContext context) {
@@ -754,23 +777,29 @@ class _ChatPageState extends State<ChatPage> {
           backgroundColor: Color.fromARGB(255, 4, 59, 33),
           title: Row(
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "google assistant",
-                    style: TextStyle(fontSize: 18),
-                  ),
-                  typing == true
-                      ? Text(
-                          "ກຳລັງພິມ...",
-                          style: TextStyle(fontSize: 12),
-                        )
-                      : Text(
-                          "ອອນລາຍ",
-                          style: TextStyle(fontSize: 12),
-                        )
-                ],
+              Consumer(
+                builder: (context, StatusTypingProvider statusTypingProvider,
+                    child) {
+                  bool typing = statusTypingProvider.typingStatus[_to];
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "google assistant",
+                        style: TextStyle(fontSize: 18),
+                      ),
+                      typing == true
+                          ? const Text(
+                              "ກຳລັງພິມ...",
+                              style: TextStyle(fontSize: 12),
+                            )
+                          : const Text(
+                              "ອອນລາຍ",
+                              style: TextStyle(fontSize: 12),
+                            )
+                    ],
+                  );
+                },
               ),
             ],
           ),
@@ -778,7 +807,14 @@ class _ChatPageState extends State<ChatPage> {
             IconButton(
                 onPressed: () {}, icon: const Icon(Icons.video_call_rounded)),
             IconButton(onPressed: () {}, icon: const Icon(Icons.call)),
-            IconButton(onPressed: () {}, icon: Icon(Icons.more_vert))
+            IconButton(
+                onPressed: () {
+                  var result = {};
+                  result.addAll({'1': {'message':'j'}});
+                  result.addAll({'2': false});
+                  print(result['3']);
+                },
+                icon: const Icon(Icons.more_vert))
           ],
         ),
         bottomSheet: Container(
@@ -795,26 +831,18 @@ class _ChatPageState extends State<ChatPage> {
                       chooseImage(context);
                     },
                     icon: Icon(Icons.camera_alt_sharp)),
-                suffixIcon: IconButton(
-                    onPressed: () {
-                      TextMessageModel textMessageModel = TextMessageModel(
-                          message: txtMessage.text,
-                          sender: _username,
-                          hour: DateTime.now().hour.toString(),
-                          minute: DateTime.now().minute.toString(),
-                          channel: _to,
-                          type: "TEXT");
-                      var provider = Provider.of<TextMessageProvider>(context,
-                          listen: false);
-                      provider.addTextMessage(textMessageModel);
-                      sendtxtMessage(
-                          txtMessage.text,
-                          _username,
-                          DateTime.now().hour.toString(),
-                          DateTime.now().minute.toString());
-                      txtMessage.clear();
-                    },
-                    icon: Icon(Icons.send)),
+                suffixIcon: sendImage == true && txtMessage.text.length <= 0
+                    ? IconButton(
+                        onPressed: () {},
+                        icon: const Icon(Icons.send_time_extension))
+                    : IconButton(
+                        onPressed: () {
+                          sendtxtMessage();
+                          setState(() {
+                            sendImage;
+                          });
+                        },
+                        icon: const Icon(Icons.send)),
                 labelText: "Message"),
           )),
         ),

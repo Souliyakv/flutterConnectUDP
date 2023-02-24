@@ -1,5 +1,6 @@
 import 'package:demoudp/page/loginPage.dart';
 import 'package:demoudp/providers/connectSocketUDP_provider.dart';
+import 'package:demoudp/providers/getImageProvider.dart';
 import 'package:demoudp/providers/imageProvider.dart';
 import 'package:demoudp/providers/statusTypingProvider.dart';
 import 'package:demoudp/providers/textMessage_provider.dart';
@@ -28,6 +29,9 @@ class MyApp extends StatelessWidget {
         }),
         ChangeNotifierProvider(create: (context){
           return ChooseImageProvider();
+        }),
+        ChangeNotifierProvider(create: (context){
+          return GetImageProvider();
         })
       ],
       child: MaterialApp(

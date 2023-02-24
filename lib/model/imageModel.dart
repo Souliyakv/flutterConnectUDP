@@ -1,9 +1,12 @@
-import 'package:flutter/foundation.dart';
+// class ChooseImageModel {
+//   late String channel;
 
-class ChooseImageModel {
-  var keyIndex;
-  List<Uint8List> sperate = [];
+//   ChooseImageModel({required this.channel});
+// }
 
-  ChooseImageModel(
-      {required this.keyIndex,required this.sperate});
+class SendImageModel {
+  late String channel;
+  late String token;
+  SendImageModel({required this.token, required this.channel});
 }
+

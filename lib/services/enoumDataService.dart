@@ -10,4 +10,5 @@ class Ecommand {
   String noUser = "NoUser";
   String txtsend = "txtsend";
   String typingStatus = "typingStatus";
+  String send = "send";
 }

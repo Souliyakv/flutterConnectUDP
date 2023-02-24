@@ -1,6 +1,6 @@
 class TextMessageModel {
   // {"message": msg, "sender": sender, "hour": hour, "minute": minute}
-  late String message;
+  var message;
   late String sender;
   late String hour;
   late String minute;
@@ -17,7 +17,7 @@ class TextMessageModel {
 }
 
 class SendTextMessageModel {
-  late String message;
+  var message;
   late String channel;
   late String sender;
   late String hour;

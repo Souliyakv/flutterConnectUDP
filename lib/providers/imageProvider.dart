@@ -37,7 +37,6 @@ class ChooseImageProvider with ChangeNotifier {
   }
 
   void clearImage() {
-    allImageToSend.clear();
     allImageToSendKey.clear();
   }
 

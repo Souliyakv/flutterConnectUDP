@@ -3,11 +3,13 @@ import 'dart:convert';
 import 'package:demoudp/model/imageModel.dart';
 import 'package:demoudp/model/textMessage_model.dart';
 import 'package:demoudp/model/typingStatusModel.dart';
+import 'package:demoudp/page/playVideo.dart';
 import 'package:demoudp/providers/connectSocketUDP_provider.dart';
 import 'package:demoudp/providers/imageProvider.dart';
 import 'package:demoudp/providers/statusTypingProvider.dart';
 import 'package:demoudp/providers/textMessage_provider.dart';
 import 'package:demoudp/widget/showAlert.dart';
+import 'package:demoudp/widget/showFullImage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -120,7 +122,7 @@ class _ChatPageState extends State<ChatPage> {
                     borderRadius: BorderRadius.circular(15),
                     image: const DecorationImage(
                         image: NetworkImage(
-                            "https://ssl-static.libsyn.com/p/assets/5/b/f/0/5bf0dd70c2b87bb6/AoG.png"),
+                            "https://upload.wikimedia.org/wikipedia/commons/7/7a/Siri_Logo_in_2022.png"),
                         fit: BoxFit.cover)),
               ),
             ],
@@ -134,9 +136,9 @@ class _ChatPageState extends State<ChatPage> {
                   // bool typing = statusTypingProvider.typingStatus[_to];
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text(
-                        "google assistant",
+                        "${_to}",
                         style: TextStyle(fontSize: 18),
                       ),
                       // typing == true
@@ -145,7 +147,7 @@ class _ChatPageState extends State<ChatPage> {
                       //         style: TextStyle(fontSize: 12),
                       //       )
                       //     : const
-                      Text(
+                      const Text(
                         "ອອນລາຍ",
                         style: TextStyle(fontSize: 12),
                       )
@@ -261,11 +263,13 @@ class _ChatPageState extends State<ChatPage> {
             return Padding(
               padding: EdgeInsets.only(bottom: 55),
               child: ListView.builder(
-                itemCount: textMessagePro.lTextMessages.length,
+                itemCount: textMessagePro.getMessage(_to.toString()) == null
+                    ? 0
+                    : textMessagePro.getMessage(_to.toString()).length,
                 reverse: true,
                 itemBuilder: (context, index) {
                   TextMessageModel dataMessage =
-                      textMessagePro.lTextMessages[index];
+                      textMessagePro.getMessage(_to.toString())[index];
                   String uri = dataMessage.message.toString();
                   late Uint8List _bytes = base64.decode(uri.split(',').last);
                   if (dataMessage.sender.toString() == _username.toString()) {
@@ -290,14 +294,52 @@ class _ChatPageState extends State<ChatPage> {
                                         },
                                         child: Text(
                                             dataMessage.message.toString()))
-                                    : Container(
-                                        height: 200,
-                                        width: 200,
-                                        decoration: BoxDecoration(
-                                            image: DecorationImage(
-                                                image: MemoryImage(_bytes),
-                                                fit: BoxFit.cover)),
-                                      ),
+                                    : dataMessage.type == "IMAGE"
+                                        ? GestureDetector(
+                                            onTap: () {
+                                              Navigator.push(context,
+                                                  MaterialPageRoute(
+                                                builder: (context) {
+                                                  return ShowFullImageScreen(
+                                                    imageAddress: uri,
+                                                    sender: "ເຈົ້າ",
+                                                    hour: dataMessage.hour,
+                                                    minute: dataMessage.minute,
+                                                  );
+                                                },
+                                              ));
+                                            },
+                                            child: Container(
+                                              height: 200,
+                                              width: 200,
+                                              decoration: BoxDecoration(
+                                                  image: DecorationImage(
+                                                      image:
+                                                          MemoryImage(_bytes),
+                                                      fit: BoxFit.cover)),
+                                            ),
+                                          )
+                                        : GestureDetector(
+                                            onTap: () {
+                                              Navigator.push(context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) {
+                                                return PlayVideoScreen(
+                                                    videoAddress: uri,
+                                                    sender: dataMessage.sender,
+                                                    hour: dataMessage.hour,
+                                                    minute: dataMessage.minute);
+                                              }));
+                                            },
+                                            child: Container(
+                                                height: 100,
+                                                width: 100,
+                                                decoration: const BoxDecoration(
+                                                    image: DecorationImage(
+                                                        image: NetworkImage(
+                                                            "https://static.thenounproject.com/png/375319-200.png"),
+                                                        fit: BoxFit.cover))),
+                                          ),
                                 Text(
                                   '${dataMessage.hour}:${dataMessage.minute} ນ',
                                   style: TextStyle(fontSize: 10),
@@ -330,14 +372,51 @@ class _ChatPageState extends State<ChatPage> {
                                       },
                                       child:
                                           Text(dataMessage.message.toString()))
-                                  : Container(
-                                      height: 200,
-                                      width: 200,
-                                      decoration: BoxDecoration(
-                                          image: DecorationImage(
-                                              image: MemoryImage(_bytes),
-                                              fit: BoxFit.cover)),
-                                    ),
+                                  : dataMessage.type == "IMAGE"
+                                      ? GestureDetector(
+                                          onTap: () {
+                                            Navigator.push(context,
+                                                MaterialPageRoute(
+                                              builder: (context) {
+                                                return ShowFullImageScreen(
+                                                  imageAddress: uri,
+                                                  sender: dataMessage.sender,
+                                                  hour: dataMessage.hour,
+                                                  minute: dataMessage.minute,
+                                                );
+                                              },
+                                            ));
+                                          },
+                                          child: Container(
+                                            height: 200,
+                                            width: 200,
+                                            decoration: BoxDecoration(
+                                                image: DecorationImage(
+                                                    image: MemoryImage(_bytes),
+                                                    fit: BoxFit.cover)),
+                                          ),
+                                        )
+                                      : GestureDetector(
+                                          onTap: () {
+                                            Navigator.push(context,
+                                                MaterialPageRoute(
+                                                    builder: (context) {
+                                              return PlayVideoScreen(
+                                                  videoAddress: uri,
+                                                  sender: dataMessage.sender,
+                                                  hour: dataMessage.hour,
+                                                  minute: dataMessage.minute);
+                                            }));
+                                          },
+                                          child: Container(
+                                              height: 100,
+                                              width: 100,
+                                              decoration: const BoxDecoration(
+                                                  image: DecorationImage(
+                                                      image: NetworkImage(
+                                                          "https://static.thenounproject.com/png/375319-200.png"),
+                                                      fit: BoxFit.cover))),
+                                        ),
                               Text(
                                 '${dataMessage.hour}:${dataMessage.minute} ນ',
                                 style: TextStyle(fontSize: 10),

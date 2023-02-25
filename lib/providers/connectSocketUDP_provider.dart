@@ -23,7 +23,7 @@ class ConnectSocketUDPProvider with ChangeNotifier {
     var pvdGetImage = Provider.of<GetImageProvider>(context, listen: false);
     var provider = Provider.of<TextMessageProvider>(context, listen: false);
     var pvdImage = Provider.of<ChooseImageProvider>(context, listen: false);
-    RawDatagramSocket.bind(InternetAddress.anyIPv4, 2222)
+    RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 2222)
         .then((RawDatagramSocket socket) {
       this.socket = socket;
       this.socket.listen((event) {
@@ -131,6 +131,9 @@ class ConnectSocketUDPProvider with ChangeNotifier {
             case "success":
               pvdImage.success(json.decode(data)['trans']);
               break;
+            case "userlist":
+              pvdGetImage.getuserlist(json.decode(data)['list']);
+              break;
             default:
               PushBufferToImageModel pushBufferToImageModel =
                   PushBufferToImageModel(
@@ -193,6 +196,7 @@ class ConnectSocketUDPProvider with ChangeNotifier {
 
   void sendImage(SendImageModel sendImageModel, BuildContext context) {
     var pvdImage = Provider.of<ChooseImageProvider>(context, listen: false);
+    var provider = Provider.of<TextMessageProvider>(context, listen: false);
     var allImageToSend = pvdImage.allImageToSend;
     var allImageToSendKey = pvdImage.allImageToSendKey;
 
@@ -206,10 +210,27 @@ class ConnectSocketUDPProvider with ChangeNotifier {
         'token': sendImageModel.token,
         'command': Ecommand().sendTotal
       };
-      // print(sendImageModel.channel);
       socket.send(utf8.encode(jsonEncode(sendImageData)),
           InternetAddress("${IpAddress().ipAddress}"), 2222);
+      List<dynamic> newList = [];
+      for (int x = 0; x < allImageToSend[allImageToSendKey[i]].length; x++) {
+        // newList.addAll(
+        //     jsonDecode(dataArr[pushBufferToImageModel.trans][i].toString()));
+        newList.addAll(
+            jsonDecode(allImageToSend[allImageToSendKey[i]][x].toString()));
+      }
+      String base64string = base64.encode(newList.cast<int>());
+      var imageFireResult = "data:image/jpg;base64,$base64string";
+      TextMessageModel textMessageModel = TextMessageModel(
+          message: imageFireResult.toString(),
+          sender: sendImageModel.token,
+          hour: DateTime.now().hour.toString(),
+          minute: DateTime.now().minute.toString(),
+          channel: sendImageModel.channel,
+          type: "IMAGE");
+      provider.addTextMessage(textMessageModel);
     }
+    pvdImage.clearImage();
     // print(sendImageData);
   }
 
@@ -299,6 +320,12 @@ class ConnectSocketUDPProvider with ChangeNotifier {
       "command": Ecommand().resend
     };
     this.socket.send(utf8.encode(jsonEncode(resendData)),
+        InternetAddress("${IpAddress().ipAddress}"), 2222);
+  }
+
+  findUserslist(String username) {
+    var findUser = {"token": username, "command": "findusers"};
+    socket.send(utf8.encode(jsonEncode(findUser)),
         InternetAddress("${IpAddress().ipAddress}"), 2222);
   }
 }

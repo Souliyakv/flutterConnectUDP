@@ -24,20 +24,20 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) {
           return ConnectSocketUDPProvider();
         }),
-        ChangeNotifierProvider(create: (context){
+        ChangeNotifierProvider(create: (context) {
           return StatusTypingProvider();
         }),
-        ChangeNotifierProvider(create: (context){
+        ChangeNotifierProvider(create: (context) {
           return ChooseImageProvider();
         }),
-        ChangeNotifierProvider(create: (context){
+        ChangeNotifierProvider(create: (context) {
           return GetImageProvider();
         })
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: ThemeData(primarySwatch: Colors.blue),
-        home:const LoginPage(),
+        home: const LoginPage(),
       ),
     );
   }

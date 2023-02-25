@@ -235,8 +235,8 @@ class GetImageProvider with ChangeNotifier {
     timeOut = Timer(Duration(seconds: 2), () {
       // print(dataArr[model.trans]);
       for (var i = 0; i < checkTimeoutIndex.length; i++) {
-        GetTotalModel model = checkTimeout[checkTimeoutIndex[i]];
-        if (dataArr[model.trans] != null) {
+        // GetTotalModel model = checkTimeout[checkTimeoutIndex[i]];
+        if (checkTimeout != null || checkTimeout.length > 0) {
           convertToImage(checkTimeout[checkTimeoutIndex[i]], context);
           // convertToImage(getTotalModel);
           print('convert');
@@ -277,5 +277,12 @@ class GetImageProvider with ChangeNotifier {
         }
       }
     }
+  }
+
+  var userList = [];
+
+  getuserlist(List user) {
+    userList = user;
+    notifyListeners();
   }
 }

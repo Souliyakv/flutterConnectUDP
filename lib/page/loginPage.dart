@@ -1,5 +1,5 @@
 import 'package:demoudp/model/connectSocketUDP_model.dart';
-import 'package:demoudp/page/chatPage.dart';
+import 'package:demoudp/page/listChatspage.dart';
 import 'package:demoudp/providers/connectSocketUDP_provider.dart';
 import 'package:demoudp/widget/roundedButton.dart';
 import 'package:flutter/material.dart';
@@ -17,7 +17,6 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final username = TextEditingController();
   final password = TextEditingController();
-  final channel = TextEditingController();
   final formkey = GlobalKey<FormState>();
   @override
   Widget build(BuildContext context) {
@@ -55,20 +54,7 @@ class _LoginPageState extends State<LoginPage> {
                       return null;
                     },
                   ),
-                  const SizedBox(
-                    height: 15,
-                  ),
-                  RoundedInPutField(
-                    keyboardType: TextInputType.number,
-                    controller: channel,
-                    labelText: "Channel",
-                    validator: (value) {
-                      if (value!.isEmpty || value.length <= 0) {
-                        return "Please Enter Channel";
-                      }
-                      return null;
-                    },
-                  ),
+                 
                   const SizedBox(
                     height: 25,
                   ),
@@ -81,12 +67,20 @@ class _LoginPageState extends State<LoginPage> {
                               context,
                               listen: false);
                           provider.login(loginMD, context);
+                          // Navigator.push(context, MaterialPageRoute(
+                          //   builder: (context) {
+                          //     return ChatPage(
+                          //         username: username.text,
+                          //         password: password.text,
+                          //         channel: channel.text);
+                          //   },
+                          // ));
                           Navigator.push(context, MaterialPageRoute(
                             builder: (context) {
-                              return ChatPage(
-                                  username: username.text,
-                                  password: password.text,
-                                  channel: channel.text);
+                              return ListOfChatPageScreen(
+                                password: password.text,
+                                username: username.text,
+                              );
                             },
                           ));
                         }

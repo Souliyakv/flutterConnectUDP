@@ -23,7 +23,7 @@ class ConnectSocketUDPProvider with ChangeNotifier {
     var pvdGetImage = Provider.of<GetImageProvider>(context, listen: false);
     var provider = Provider.of<TextMessageProvider>(context, listen: false);
     var pvdImage = Provider.of<ChooseImageProvider>(context, listen: false);
-    RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 2222)
+    RawDatagramSocket.bind(InternetAddress.anyIPv4, 2222)
         .then((RawDatagramSocket socket) {
       this.socket = socket;
       this.socket.listen((event) {
@@ -63,7 +63,8 @@ class ConnectSocketUDPProvider with ChangeNotifier {
               DetailImageModel detailImageModel = DetailImageModel(
                   trans: json.decode(data)['trans'].toString(),
                   sender: json.decode(data)['sender'].toString(),
-                  channel: json.decode(data)['channel'].toString());
+                  channel: json.decode(data)['channel'].toString(),
+                  type: json.decode(data)['type']);
               pvdGetImage.addDetailImage(detailImageModel);
               pvdGetImage.sendTotal(getTotalModel, context);
               break;
@@ -194,7 +195,8 @@ class ConnectSocketUDPProvider with ChangeNotifier {
         InternetAddress("${IpAddress().ipAddress}"), 2222);
   }
 
-  void sendImage(SendImageModel sendImageModel, BuildContext context) {
+  void sendImage(
+      SendImageModel sendImageModel, BuildContext context, String type) {
     var pvdImage = Provider.of<ChooseImageProvider>(context, listen: false);
     var provider = Provider.of<TextMessageProvider>(context, listen: false);
     var allImageToSend = pvdImage.allImageToSend;
@@ -205,7 +207,8 @@ class ConnectSocketUDPProvider with ChangeNotifier {
         'data': {
           'total': allImageToSend[allImageToSendKey[i]].length,
           'channel': sendImageModel.channel,
-          'trans': allImageToSendKey[i]
+          'trans': allImageToSendKey[i],
+          'type': type
         },
         'token': sendImageModel.token,
         'command': Ecommand().sendTotal
@@ -232,6 +235,24 @@ class ConnectSocketUDPProvider with ChangeNotifier {
     }
     pvdImage.clearImage();
     // print(sendImageData);
+  }
+
+  sendVideo(SendImageModel sendImageModel, BuildContext context, var trans) {
+    var pvdImage = Provider.of<ChooseImageProvider>(context, listen: false);
+    var provider = Provider.of<TextMessageProvider>(context, listen: false);
+    var allImageToSend = pvdImage.allImageToSend;
+    var sendVideoData = {
+      'data': {
+        'total': allImageToSend[trans].length,
+        'channel': sendImageModel.channel,
+        'trans': trans,
+        'type': 'VIDEO'
+      },
+      'token': sendImageModel.token,
+      'command': Ecommand().sendTotal
+    };
+    socket.send(utf8.encode(jsonEncode(sendVideoData)),
+        InternetAddress("${IpAddress().ipAddress}"), 2222);
   }
 
   void confirmToSend(ConfirmToSendModel confirmToSendModel) {

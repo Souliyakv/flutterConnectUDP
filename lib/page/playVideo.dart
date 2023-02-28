@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
@@ -5,7 +7,7 @@ class PlayVideoScreen extends StatefulWidget {
   final String sender;
   final String hour;
   final String minute;
-  final String videoAddress;
+  final videoAddress;
   const PlayVideoScreen(
       {super.key,
       required this.hour,
@@ -25,17 +27,16 @@ class _PlayVideoScreenState extends State<PlayVideoScreen> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    _controller = VideoPlayerController.network(widget.videoAddress);
-    _initializeVideoPlayerFuture = _controller.initialize();
-
-    _controller.setLooping(true);
-    _controller.play();
+    palyVideo();
   }
 
-  @override
-  void dispose() {
-    // TODO: implement dispose
-    super.dispose();
+  void palyVideo() async {
+    File file = File(widget.videoAddress.toString());
+
+    _controller = VideoPlayerController.file(file);
+    _initializeVideoPlayerFuture = _controller.initialize();
+    _controller.setLooping(false);
+    _controller.play();
   }
 
   @override
@@ -73,20 +74,25 @@ class _PlayVideoScreenState extends State<PlayVideoScreen> {
                     }
                   });
                 },
-                child: AspectRatio(
-                  aspectRatio: _controller.value.aspectRatio,
-                  child: Stack(alignment: Alignment.center, children: [
-                    VideoPlayer(_controller),
-                    // IconButton(
-                    //   onPressed: () {},
-                    //   icon: Icon(_controller.value.isPlaying
-                    //       ? Icons.pause
-                    //       : Icons.play_arrow),
-                    // ),
-                    _controller.value.isPlaying
-                        ? const Text("")
-                        : const Icon(Icons.play_arrow,size: 50,)
-                  ]),
+                child: Container(padding: EdgeInsets.all(5),
+                  child: AspectRatio(
+                    aspectRatio: _controller.value.aspectRatio,
+                    child: Stack(alignment: Alignment.center, children: [
+                      VideoPlayer(_controller),
+                      // IconButton(
+                      //   onPressed: () {},
+                      //   icon: Icon(_controller.value.isPlaying
+                      //       ? Icons.pause
+                      //       : Icons.play_arrow),
+                      // ),
+                      _controller.value.isPlaying
+                          ? const Text("")
+                          : const Icon(
+                              Icons.play_arrow,
+                              size: 50,
+                            )
+                    ]),
+                  ),
                 ),
               ),
             );

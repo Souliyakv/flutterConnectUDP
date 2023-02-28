@@ -1,11 +1,14 @@
 import 'dart:io';
+import 'package:demoudp/model/imageModel.dart';
 import 'package:demoudp/providers/connectSocketUDP_provider.dart';
+import 'package:demoudp/providers/textMessage_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../model/getImageModel.dart';
+import '../model/textMessage_model.dart';
 
 class ChooseImageProvider with ChangeNotifier {
   File? file;
@@ -34,6 +37,39 @@ class ChooseImageProvider with ChangeNotifier {
     }
     allImageToSend.addAll({keyIndex: sperate});
     notifyListeners();
+  }
+
+  void chooseVideo(BuildContext context, var path, sender, channel) async {
+    var pvdConnect =
+        Provider.of<ConnectSocketUDPProvider>(context, listen: false);
+    var pvdMessage = Provider.of<TextMessageProvider>(context, listen: false);
+    file = File(path);
+    int chunkSize = 1800;
+    List<Uint8List> sperate = [];
+    imagebytes = await file!.readAsBytes();
+    var keyIndex;
+
+    keyIndex = DateTime.now().millisecondsSinceEpoch;
+    for (int i = 0; i < imagebytes.length; i += chunkSize) {
+      int end =
+          i + chunkSize < imagebytes.length ? i + chunkSize : imagebytes.length;
+      sperate.add(imagebytes.sublist(i, end));
+    }
+    // videoToSend.addAll(sperate);
+    allImageToSend.addAll({keyIndex: sperate});
+    // print(allImageToSend);
+    SendImageModel sendImageModel =
+        SendImageModel(token: sender, channel: channel);
+    pvdConnect.sendVideo(sendImageModel, context, keyIndex);
+    TextMessageModel textMessageModel = TextMessageModel(
+        message: path,
+        sender: sender.toString(),
+        hour: DateTime.now().hour.toString(),
+        minute: DateTime.now().minute.toString(),
+        channel: channel.toString(),
+        type: 'VIDEO');
+        print(path);
+    pvdMessage.addTextMessage(textMessageModel);
   }
 
   void clearImage() {

@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:demoudp/model/getImageModel.dart';
 import 'package:demoudp/providers/connectSocketUDP_provider.dart';
 import 'package:demoudp/providers/textMessage_provider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../model/textMessage_model.dart';
@@ -26,9 +29,11 @@ class GetImageProvider with ChangeNotifier {
     detailDataImage.addAll({
       detailImageModel.trans: [
         detailImageModel.sender.toString(),
-        detailImageModel.channel.toString()
+        detailImageModel.channel.toString(),
+        detailImageModel.type.toString()
       ]
     });
+    print(detailImageModel.type);
   }
 
   sendTotal(GetTotalModel sendTotalModel, BuildContext context) {
@@ -120,9 +125,11 @@ class GetImageProvider with ChangeNotifier {
     }
   }
 
-  convertToImage(GetTotalModel pushBufferToImageModel, BuildContext context) {
+  convertToImage(
+      GetTotalModel pushBufferToImageModel, BuildContext context) async {
     var provider = Provider.of<TextMessageProvider>(context, listen: false);
     timeOut.cancel();
+
     List<dynamic> newList = [];
     newList.clear();
     print("CV");
@@ -135,23 +142,46 @@ class GetImageProvider with ChangeNotifier {
               jsonDecode(dataArr[pushBufferToImageModel.trans][i].toString()));
         }
 
-        String base64string = base64.encode(newList.cast<int>());
-        var imageFireResult = "data:image/jpg;base64,$base64string";
+        if (detailDataImage[pushBufferToImageModel.trans.toString()][2] ==
+            'VIDEO') {
+          Uint8List bytes = Uint8List.fromList(newList.cast<int>());
+          final dir = await getExternalStorageDirectory();
+          File file = File("${dir!.path}/" +
+              DateTime.now().millisecondsSinceEpoch.toString() +
+              ".mp4");
+          await file.writeAsBytes(bytes);
+          print("Save to :${file.path}");
+          TextMessageModel textMessageModel = TextMessageModel(
+              message: file.path,
+              sender: detailDataImage[pushBufferToImageModel.trans.toString()]
+                      [0]
+                  .toString(),
+              hour: DateTime.now().hour.toString(),
+              minute: DateTime.now().minute.toString(),
+              channel: detailDataImage[pushBufferToImageModel.trans.toString()]
+                      [1]
+                  .toString(),
+              type: detailDataImage[pushBufferToImageModel.trans.toString()][2]
+                  .toString());
+          provider.addTextMessage(textMessageModel);
+        } else {
+          String base64string = base64.encode(newList.cast<int>());
+          var imageFireResult = "data:image/jpg;base64,$base64string";
+          TextMessageModel textMessageModel = TextMessageModel(
+              message: imageFireResult.toString(),
+              sender: detailDataImage[pushBufferToImageModel.trans.toString()]
+                      [0]
+                  .toString(),
+              hour: DateTime.now().hour.toString(),
+              minute: DateTime.now().minute.toString(),
+              channel: detailDataImage[pushBufferToImageModel.trans.toString()]
+                      [1]
+                  .toString(),
+              type: detailDataImage[pushBufferToImageModel.trans.toString()][2]
+                  .toString());
+          provider.addTextMessage(textMessageModel);
+        }
 
-        // String uri = imageFireResult.toString();
-        // late Uint8List _bytes = base64.decode(uri.split(',').last);
-        // allImageToShow.add(_bytes);
-        // saveToStorage(base64string);
-        TextMessageModel textMessageModel = TextMessageModel(
-            message: imageFireResult.toString(),
-            sender: detailDataImage[pushBufferToImageModel.trans.toString()][0]
-                .toString(),
-            hour: DateTime.now().hour.toString(),
-            minute: DateTime.now().minute.toString(),
-            channel: detailDataImage[pushBufferToImageModel.trans.toString()][1]
-                .toString(),
-            type: "IMAGE");
-        provider.addTextMessage(textMessageModel);
         SendSuccessModel sendSuccessModel = SendSuccessModel(
             address: pushBufferToImageModel.address,
             port: pushBufferToImageModel.port,

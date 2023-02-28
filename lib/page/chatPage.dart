@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:demoudp/model/imageModel.dart';
 import 'package:demoudp/model/textMessage_model.dart';
 import 'package:demoudp/model/typingStatusModel.dart';
+import 'package:demoudp/page/checkVideo.dart';
 import 'package:demoudp/page/playVideo.dart';
 import 'package:demoudp/providers/connectSocketUDP_provider.dart';
 import 'package:demoudp/providers/imageProvider.dart';
@@ -10,9 +12,11 @@ import 'package:demoudp/providers/statusTypingProvider.dart';
 import 'package:demoudp/providers/textMessage_provider.dart';
 import 'package:demoudp/widget/showAlert.dart';
 import 'package:demoudp/widget/showFullImage.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:video_player/video_player.dart';
 
 class ChatPage extends StatefulWidget {
   final String username;
@@ -79,6 +83,9 @@ class _ChatPageState extends State<ChatPage> {
   late String _username;
   late String _password;
   late String _to;
+  File? file;
+  var imageFireResult = '';
+  late Uint8List imagebytes = new Uint8List(0);
 
   void sendtxtMessage() {
     TextMessageModel textMessageModel = TextMessageModel(
@@ -172,7 +179,7 @@ class _ChatPageState extends State<ChatPage> {
                           listen: false);
                       SendImageModel sendImageModel =
                           SendImageModel(token: _username, channel: _to);
-                      pvdConnect.sendImage(sendImageModel, context);
+                      pvdConnect.sendImage(sendImageModel, context, 'IMAGE');
                     },
                     icon: Stack(
                       alignment: Alignment.topRight,
@@ -186,7 +193,11 @@ class _ChatPageState extends State<ChatPage> {
                     ));
               },
             ),
-            IconButton(onPressed: () {}, icon: const Icon(Icons.call)),
+            IconButton(
+                onPressed: () {
+                  checkVideo();
+                },
+                icon: const Icon(Icons.video_camera_back)),
             IconButton(
                 onPressed: () {
                   var result = {};
@@ -205,6 +216,7 @@ class _ChatPageState extends State<ChatPage> {
           // color: Colors.white,
           child: Form(
               child: TextFormField(
+            // initialValue: imageFireResult.toString(),
             focusNode: _focusNode,
             controller: txtMessage,
             decoration: InputDecoration(
@@ -233,7 +245,8 @@ class _ChatPageState extends State<ChatPage> {
                                         listen: false);
                                 SendImageModel sendImageModel = SendImageModel(
                                     token: _username, channel: _to);
-                                pvdConnect.sendImage(sendImageModel, context);
+                                pvdConnect.sendImage(
+                                    sendImageModel, context, 'IMAGE');
                               },
                               icon: Stack(
                                 alignment: Alignment.topRight,
@@ -272,6 +285,13 @@ class _ChatPageState extends State<ChatPage> {
                       textMessagePro.getMessage(_to.toString())[index];
                   String uri = dataMessage.message.toString();
                   late Uint8List _bytes = base64.decode(uri.split(',').last);
+                  late VideoPlayerController _controller;
+                  late Future<void> _initializeVideoPlayerFuture;
+                  File file = File(uri);
+                  _controller = VideoPlayerController.file(file);
+                  _initializeVideoPlayerFuture = _controller.initialize();
+                  _controller.setLooping(false);
+                  _controller.pause();
                   if (dataMessage.sender.toString() == _username.toString()) {
                     return Padding(
                       padding: const EdgeInsets.all(8.0),
@@ -326,19 +346,29 @@ class _ChatPageState extends State<ChatPage> {
                                                       builder: (context) {
                                                 return PlayVideoScreen(
                                                     videoAddress: uri,
-                                                    sender: dataMessage.sender,
+                                                    sender: 'ເຈົ້າ',
                                                     hour: dataMessage.hour,
                                                     minute: dataMessage.minute);
                                               }));
                                             },
                                             child: Container(
-                                                height: 100,
-                                                width: 100,
-                                                decoration: const BoxDecoration(
-                                                    image: DecorationImage(
-                                                        image: NetworkImage(
-                                                            "https://static.thenounproject.com/png/375319-200.png"),
-                                                        fit: BoxFit.cover))),
+                                              height: 180,
+                                              width: 180,
+                                              child: AspectRatio(
+                                                aspectRatio: _controller
+                                                    .value.aspectRatio,
+                                                child: Stack(
+                                                    alignment: Alignment.center,
+                                                    children: [
+                                                      VideoPlayer(_controller),
+                                                      const Icon(
+                                                        Icons.play_arrow,
+                                                        color: Colors.white,
+                                                        size: 50,
+                                                      )
+                                                    ]),
+                                              ),
+                                            ),
                                           ),
                                 Text(
                                   '${dataMessage.hour}:${dataMessage.minute} ນ',
@@ -409,17 +439,27 @@ class _ChatPageState extends State<ChatPage> {
                                             }));
                                           },
                                           child: Container(
-                                              height: 100,
-                                              width: 100,
-                                              decoration: const BoxDecoration(
-                                                  image: DecorationImage(
-                                                      image: NetworkImage(
-                                                          "https://static.thenounproject.com/png/375319-200.png"),
-                                                      fit: BoxFit.cover))),
+                                            height: 180,
+                                            width: 180,
+                                            child: AspectRatio(
+                                              aspectRatio:
+                                                  _controller.value.aspectRatio,
+                                              child: Stack(
+                                                  alignment: Alignment.center,
+                                                  children: [
+                                                    VideoPlayer(_controller),
+                                                    const Icon(
+                                                      Icons.play_arrow,
+                                                      color: Colors.white,
+                                                      size: 50,
+                                                    )
+                                                  ]),
+                                            ),
+                                          ),
                                         ),
                               Text(
                                 '${dataMessage.hour}:${dataMessage.minute} ນ',
-                                style: TextStyle(fontSize: 10),
+                                style: const TextStyle(fontSize: 10),
                               )
                             ],
                           ),
@@ -432,5 +472,17 @@ class _ChatPageState extends State<ChatPage> {
             );
           },
         ));
+  }
+
+  checkVideo() async {
+    FilePickerResult? result =
+        await FilePicker.platform.pickFiles(type: FileType.video);
+    Navigator.push(context, MaterialPageRoute(builder: (context) {
+      return CheckVideoScreen(
+        videoAddress: result!.files.single.path,
+        sender: _username,
+        channel: _to,
+      );
+    }));
   }
 }

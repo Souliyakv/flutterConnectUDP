@@ -18,8 +18,15 @@ class ChooseImageProvider with ChangeNotifier {
   var sendIndex = {};
   var resendIndex = {};
   var dataListRefund = {};
-  void chooseImage(BuildContext context) async {
-    var image = await ImagePicker().getImage(source: ImageSource.gallery);
+  void chooseImage(BuildContext context, String choose) async {
+    var image;
+    if (choose == "camera") {
+      image = await ImagePicker().getImage(source: ImageSource.camera);
+    } else {
+      image = await ImagePicker().getImage(source: ImageSource.gallery);
+    }
+    Navigator.pop(context);
+
     file = File(image!.path);
     imagebytes = await file!.readAsBytes();
     var keyIndex;
@@ -27,7 +34,7 @@ class ChooseImageProvider with ChangeNotifier {
     keyIndex = DateTime.now().millisecondsSinceEpoch;
 
     allImageToSendKey.add(keyIndex);
-    int chunkSize = 1800;
+    int chunkSize = 2000;
 
     List<Uint8List> sperate = [];
     for (int i = 0; i < imagebytes.length; i += chunkSize) {
@@ -44,7 +51,7 @@ class ChooseImageProvider with ChangeNotifier {
         Provider.of<ConnectSocketUDPProvider>(context, listen: false);
     var pvdMessage = Provider.of<TextMessageProvider>(context, listen: false);
     file = File(path);
-    int chunkSize = 1800;
+    int chunkSize = 2000;
     List<Uint8List> sperate = [];
     imagebytes = await file!.readAsBytes();
     var keyIndex;
@@ -68,7 +75,7 @@ class ChooseImageProvider with ChangeNotifier {
         minute: DateTime.now().minute.toString(),
         channel: channel.toString(),
         type: 'VIDEO');
-        print(path);
+    print(path);
     pvdMessage.addTextMessage(textMessageModel);
   }
 

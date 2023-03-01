@@ -145,8 +145,8 @@ class GetImageProvider with ChangeNotifier {
         if (detailDataImage[pushBufferToImageModel.trans.toString()][2] ==
             'VIDEO') {
           Uint8List bytes = Uint8List.fromList(newList.cast<int>());
-          final dir = await getExternalStorageDirectory();
-          File file = File("${dir!.path}/" +
+          final dir = await getApplicationDocumentsDirectory();
+          File file = File("${dir.path}/" +
               DateTime.now().millisecondsSinceEpoch.toString() +
               ".mp4");
           await file.writeAsBytes(bytes);

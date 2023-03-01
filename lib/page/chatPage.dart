@@ -4,12 +4,14 @@ import 'dart:io';
 import 'package:demoudp/model/imageModel.dart';
 import 'package:demoudp/model/textMessage_model.dart';
 import 'package:demoudp/model/typingStatusModel.dart';
+import 'package:demoudp/page/cameraPage.dart';
 import 'package:demoudp/page/checkVideo.dart';
 import 'package:demoudp/page/playVideo.dart';
 import 'package:demoudp/providers/connectSocketUDP_provider.dart';
 import 'package:demoudp/providers/imageProvider.dart';
 import 'package:demoudp/providers/statusTypingProvider.dart';
 import 'package:demoudp/providers/textMessage_provider.dart';
+import 'package:demoudp/widget/customAttack.dart';
 import 'package:demoudp/widget/showAlert.dart';
 import 'package:demoudp/widget/showFullImage.dart';
 import 'package:file_picker/file_picker.dart';
@@ -214,62 +216,111 @@ class _ChatPageState extends State<ChatPage> {
           decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(30), color: Colors.white),
           // color: Colors.white,
-          child: Form(
-              child: TextFormField(
-            // initialValue: imageFireResult.toString(),
-            focusNode: _focusNode,
-            controller: txtMessage,
-            decoration: InputDecoration(
-                prefixIcon: IconButton(
-                    onPressed: () {
-                      var pvdImage = Provider.of<ChooseImageProvider>(context,
-                          listen: false);
-                      pvdImage.chooseImage(context);
-                    },
-                    icon: const Icon(Icons.camera_alt_sharp)),
-                suffixIcon: sendImage == true && txtMessage.text.length <= 0
-                    ? Consumer(
-                        builder: (context,
-                            ChooseImageProvider chooseImageProvider, child) {
-                          var checkImage =
-                              chooseImageProvider.allImageToSendKey;
-                          return IconButton(
-                              onPressed: () {
-                                if (checkImage.length <= 0) {
-                                  ShowAlert.showAlert(
-                                      context, 'ກະລຸນາເລືອກຮູບພາບ');
-                                }
-                                var pvdConnect =
-                                    Provider.of<ConnectSocketUDPProvider>(
-                                        context,
-                                        listen: false);
-                                SendImageModel sendImageModel = SendImageModel(
-                                    token: _username, channel: _to);
-                                pvdConnect.sendImage(
-                                    sendImageModel, context, 'IMAGE');
+          child: Row(
+            children: [
+              Expanded(
+                child: Form(
+                    child: TextFormField(
+                  // initialValue: imageFireResult.toString(),
+                  focusNode: _focusNode,
+                  controller: txtMessage,
+                  decoration: InputDecoration(
+                      prefixIcon: IconButton(
+                          onPressed: () {
+                            var pvdImage = Provider.of<ChooseImageProvider>(
+                                context,
+                                listen: false);
+                            showDialog(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: const Text("ກະລຸນາເລືອກ"),
+                                  content: Container(
+                                    height: 150,
+                                    child: Column(
+                                      children: [
+                                        Card(
+                                          child: ListTile(
+                                            onTap: () {
+                                              pvdImage.chooseImage(
+                                                  context, 'gallery');
+                                            },
+                                            title: const Text("ຮູບພາບ"),
+                                            leading: Icon(Icons.image),
+                                          ),
+                                        ),
+                                        Card(
+                                          child: ListTile(
+                                            onTap: () {
+                                              pvdImage.chooseImage(
+                                                  context, 'camera');
+                                            },
+                                            title: Text("ກ້ອງ"),
+                                            leading: Icon(Icons.camera),
+                                          ),
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                );
                               },
-                              icon: Stack(
-                                alignment: Alignment.topRight,
-                                children: [
-                                  const Icon(Icons.send_time_extension),
-                                  Text(
-                                    "${checkImage.length}",
-                                    style: TextStyle(color: Colors.red),
-                                  )
-                                ],
-                              ));
-                        },
-                      )
-                    : IconButton(
+                            );
+                            // pvdImage.chooseImage(context);
+                          },
+                          icon: const Icon(Icons.camera_alt_sharp)),
+                      suffixIcon: IconButton(
                         onPressed: () {
-                          sendtxtMessage();
-                          setState(() {
-                            sendImage;
-                          });
+                          _attackfile();
                         },
-                        icon: const Icon(Icons.send)),
-                hintText: "Message"),
-          )),
+                        icon: const Icon(Icons.attach_file),
+                      ),
+                      hintText: "Message"),
+                )),
+              ),
+              //  const SizedBox(
+              //     width: 5,
+              //   ),
+              sendImage == true && txtMessage.text.length <= 0
+                  ? Consumer(
+                      builder: (context,
+                          ChooseImageProvider chooseImageProvider, child) {
+                        var checkImage = chooseImageProvider.allImageToSendKey;
+                        return IconButton(
+                            onPressed: () {
+                              if (checkImage.length <= 0) {
+                                ShowAlert.showAlert(
+                                    context, 'ກະລຸນາເລືອກຮູບພາບ');
+                              }
+                              var pvdConnect =
+                                  Provider.of<ConnectSocketUDPProvider>(context,
+                                      listen: false);
+                              SendImageModel sendImageModel = SendImageModel(
+                                  token: _username, channel: _to);
+                              pvdConnect.sendImage(
+                                  sendImageModel, context, 'IMAGE');
+                            },
+                            icon: Stack(
+                              alignment: Alignment.topRight,
+                              children: [
+                                const Icon(Icons.send_time_extension),
+                                Text(
+                                  "${checkImage.length}",
+                                  style: TextStyle(color: Colors.red),
+                                )
+                              ],
+                            ));
+                      },
+                    )
+                  : IconButton(
+                      onPressed: () {
+                        sendtxtMessage();
+                        setState(() {
+                          sendImage;
+                        });
+                      },
+                      icon: const Icon(Icons.send))
+            ],
+          ),
         ),
         body: Consumer(
           builder: (context, TextMessageProvider textMessagePro, child) {
@@ -477,12 +528,90 @@ class _ChatPageState extends State<ChatPage> {
   checkVideo() async {
     FilePickerResult? result =
         await FilePicker.platform.pickFiles(type: FileType.video);
-    Navigator.push(context, MaterialPageRoute(builder: (context) {
-      return CheckVideoScreen(
-        videoAddress: result!.files.single.path,
-        sender: _username,
-        channel: _to,
-      );
-    }));
+    if (result!.files.single.path != null ||
+        result.files.single.path!.length > 0) {
+      Navigator.push(context, MaterialPageRoute(builder: (context) {
+        return CheckVideoScreen(
+          videoAddress: result.files.single.path,
+          sender: _username,
+          channel: _to,
+        );
+      }));
+    }
+  }
+
+  _attackfile() {
+    var pvdImage = Provider.of<ChooseImageProvider>(context, listen: false);
+    showModalBottomSheet(
+        backgroundColor: Colors.transparent,
+        context: context,
+        builder: (context) {
+          return Container(
+            height: 250,
+            width: double.infinity,
+            child: Card(
+              margin: EdgeInsets.only(
+                bottom: 50,
+                left: 10,
+                right: 10,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        CustomAttackFile(
+                          image: 'assets/image/document.png',
+                          name: 'ເອກະສານ',
+                          onTap: () {},
+                        ),
+                        CustomAttackFile(
+                            image: 'assets/image/camera.jpg',
+                            name: 'ກ້ອງ',
+                            onTap: () {
+                              pvdImage.chooseImage(context, 'camera');
+                            }),
+                        CustomAttackFile(
+                            image: 'assets/image/gallery.png',
+                            name: 'ຮູບພາບ',
+                            onTap: () {
+                              pvdImage.chooseImage(context, 'gallery');
+                            })
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        CustomAttackFile(
+                            image: 'assets/image/audio.jpeg',
+                            name: 'ສຽງ',
+                            onTap: () {}),
+                        CustomAttackFile(
+                            image: 'assets/image/video.jpeg',
+                            name: 'ວິດີໂອ',
+                            onTap: () {
+                              checkVideo();
+                            }),
+                        CustomAttackFile(
+                            image: 'assets/image/recodevideo.png',
+                            name: 'ບັນທຶກວິດີໂອ',
+                            onTap: () {
+                              Navigator.push(context, MaterialPageRoute(
+                                builder: (context) {
+                                  return CameraScreen();
+                                },
+                              ));
+                            })
+                      ],
+                    )
+                  ],
+                ),
+              ),
+            ),
+          );
+        });
   }
 }

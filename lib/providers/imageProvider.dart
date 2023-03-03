@@ -47,6 +47,7 @@ class ChooseImageProvider with ChangeNotifier {
   }
 
   void chooseVideo(BuildContext context, var path, sender, channel) async {
+    Navigator.pop(context);
     var pvdConnect =
         Provider.of<ConnectSocketUDPProvider>(context, listen: false);
     var pvdMessage = Provider.of<TextMessageProvider>(context, listen: false);
@@ -77,6 +78,10 @@ class ChooseImageProvider with ChangeNotifier {
         type: 'VIDEO');
     print(path);
     pvdMessage.addTextMessage(textMessageModel);
+  }
+
+  chooseAudio(){
+    
   }
 
   void clearImage() {

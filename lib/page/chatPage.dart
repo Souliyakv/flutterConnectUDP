@@ -5,6 +5,7 @@ import 'package:demoudp/model/imageModel.dart';
 import 'package:demoudp/model/textMessage_model.dart';
 import 'package:demoudp/model/typingStatusModel.dart';
 import 'package:demoudp/page/cameraPage.dart';
+import 'package:demoudp/page/checkAudio.dart';
 import 'package:demoudp/page/checkVideo.dart';
 import 'package:demoudp/page/playVideo.dart';
 import 'package:demoudp/providers/connectSocketUDP_provider.dart';
@@ -336,10 +337,12 @@ class _ChatPageState extends State<ChatPage> {
                       textMessagePro.getMessage(_to.toString())[index];
                   String uri = dataMessage.message.toString();
                   late Uint8List _bytes = base64.decode(uri.split(',').last);
-                  late VideoPlayerController _controller;
-                  late Future<void> _initializeVideoPlayerFuture;
+                  // late VideoPlayerController _controller;
+
                   File file = File(uri);
-                  _controller = VideoPlayerController.file(file);
+                  late Future<void> _initializeVideoPlayerFuture;
+                  late VideoPlayerController _controller =
+                      VideoPlayerController.file(file);
                   _initializeVideoPlayerFuture = _controller.initialize();
                   _controller.setLooping(false);
                   _controller.pause();
@@ -540,6 +543,21 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  checkAudio() async {
+    FilePickerResult? result =
+        await FilePicker.platform.pickFiles(type: FileType.audio);
+    if (result!.files.single.path != null ||
+        result.files.single.path!.length > 0) {
+      Navigator.push(context, MaterialPageRoute(builder: (context) {
+        return CheckAudioScreen(
+          audioAddress: result.files.single.path,
+          sender: _username,
+          channel: _to,
+        );
+      }));
+    }
+  }
+
   _attackfile() {
     var pvdImage = Provider.of<ChooseImageProvider>(context, listen: false);
     showModalBottomSheet(
@@ -588,7 +606,9 @@ class _ChatPageState extends State<ChatPage> {
                         CustomAttackFile(
                             image: 'assets/image/audio.jpeg',
                             name: 'ສຽງ',
-                            onTap: () {}),
+                            onTap: () {
+                              checkAudio();
+                            }),
                         CustomAttackFile(
                             image: 'assets/image/video.jpeg',
                             name: 'ວິດີໂອ',
@@ -599,9 +619,13 @@ class _ChatPageState extends State<ChatPage> {
                             image: 'assets/image/recodevideo.png',
                             name: 'ບັນທຶກວິດີໂອ',
                             onTap: () {
+                              Navigator.pop(context);
                               Navigator.push(context, MaterialPageRoute(
                                 builder: (context) {
-                                  return CameraScreen();
+                                  return CameraScreen(
+                                    sender: _username,
+                                    channel: _to,
+                                  );
                                 },
                               ));
                             })

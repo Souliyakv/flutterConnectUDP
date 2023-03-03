@@ -45,6 +45,7 @@ dependencies:
   video_player: ^2.5.2
   file_picker: ^5.2.5
   camera: ^0.10.3+2
+  assets_audio_player: ^3.0.6
 
 
 dev_dependencies:
@@ -78,6 +79,7 @@ flutter:
     - assets/image/audio.jpeg
     - assets/image/video.jpeg
     - assets/image/recodevideo.png
+    - assets/audio/audiotest.mp3
     
   #   - images/a_dot_ham.jpeg
 

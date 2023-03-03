@@ -98,39 +98,41 @@ class _CheckVideoScreenState extends State<CheckVideoScreen> {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.only(left: 20, right: 20),
-                      child: VideoProgressIndicator(
-                        _controller,
-                        allowScrubbing: true,
-                        colors: const VideoProgressColors(
-                          backgroundColor: Colors.white,
-                          playedColor: Color.fromARGB(255, 4, 59, 33),
-                        ),
+                      padding: const EdgeInsets.only(left: 8, right: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          playvalue >= 3600
+                              ? Text(
+                                  "${playvalue ~/ 3600}:${playvalue ~/ 60}:${playvalue % 60}  ",
+                                  style: const TextStyle(color: Colors.white),
+                                )
+                              : Text(
+                                  "${playvalue ~/ 60}:${playvalue % 60}  ",
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                          Expanded(
+                            child: VideoProgressIndicator(
+                              _controller,
+                              allowScrubbing: true,
+                              colors: const VideoProgressColors(
+                                backgroundColor: Colors.white,
+                                playedColor: Color.fromARGB(255, 4, 59, 33),
+                              ),
+                            ),
+                          ),
+                          _controller.value.duration.inSeconds >= 3600
+                              ? Text(
+                                  "  ${_controller.value.duration.inSeconds ~/ 3600}:${_controller.value.duration.inSeconds ~/ 60}:${_controller.value.duration.inSeconds % 60}",
+                                  style: const TextStyle(color: Colors.white),
+                                )
+                              : Text(
+                                  "  ${_controller.value.duration.inSeconds ~/ 60}:${_controller.value.duration.inSeconds % 60}",
+                                  style: const TextStyle(color: Colors.white),
+                                )
+                        ],
                       ),
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        playvalue >= 3600
-                            ? Text(
-                                "   ${playvalue ~/ 3600}:${playvalue ~/ 60}:${playvalue % 60}",
-                                style: const TextStyle(color: Colors.white),
-                              )
-                            : Text(
-                                "   ${playvalue ~/ 60}:${playvalue % 60}",
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                        _controller.value.duration.inSeconds >= 3600
-                            ? Text(
-                                "${_controller.value.duration.inSeconds ~/ 3600}:${_controller.value.duration.inSeconds ~/ 60}:${_controller.value.duration.inSeconds % 60}   ",
-                                style: const TextStyle(color: Colors.white),
-                              )
-                            : Text(
-                                "${_controller.value.duration.inSeconds ~/ 60}:${_controller.value.duration.inSeconds % 60}   ",
-                                style: const TextStyle(color: Colors.white),
-                              )
-                      ],
-                    )
                   ],
                 ),
               ),

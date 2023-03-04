@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:demoudp/model/imageModel.dart';
 import 'package:demoudp/model/textMessage_model.dart';
 import 'package:demoudp/model/typingStatusModel.dart';
@@ -8,6 +9,7 @@ import 'package:demoudp/page/cameraPage.dart';
 import 'package:demoudp/page/checkAudio.dart';
 import 'package:demoudp/page/checkVideo.dart';
 import 'package:demoudp/page/playVideo.dart';
+import 'package:demoudp/page/recodeAudio.dart';
 import 'package:demoudp/providers/connectSocketUDP_provider.dart';
 import 'package:demoudp/providers/imageProvider.dart';
 import 'package:demoudp/providers/statusTypingProvider.dart';
@@ -36,6 +38,8 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
+  final assetsAudioPlayer = AssetsAudioPlayer();
+  String paths = '';
   @override
   void initState() {
     // TODO: implement initState
@@ -55,6 +59,7 @@ class _ChatPageState extends State<ChatPage> {
   void dispose() {
     _focusNode.removeListener(_onFocusChange);
     _focusNode.dispose();
+    assetsAudioPlayer.dispose();
     super.dispose();
   }
 
@@ -87,8 +92,9 @@ class _ChatPageState extends State<ChatPage> {
   late String _password;
   late String _to;
   File? file;
-  var imageFireResult = '';
-  late Uint8List imagebytes = new Uint8List(0);
+  // bool _play = false;
+  double position = 0.0;
+  double durationData = 1.0;
 
   void sendtxtMessage() {
     TextMessageModel textMessageModel = TextMessageModel(
@@ -203,14 +209,11 @@ class _ChatPageState extends State<ChatPage> {
                 icon: const Icon(Icons.video_camera_back)),
             IconButton(
                 onPressed: () {
-                  var result = {};
-
-                  result.addAll({
-                    '2': ['a', 2]
-                  });
-                  print(result['2'][1]);
+          Navigator.push(context,MaterialPageRoute(builder: (context){
+            return RecodeAudioScreen(sender: _username,channel: _to,);
+          }));
                 },
-                icon: const Icon(Icons.more_vert))
+                icon: const Icon(Icons.record_voice_over_sharp))
           ],
         ),
         bottomSheet: Container(
@@ -347,180 +350,400 @@ class _ChatPageState extends State<ChatPage> {
                   _controller.setLooping(false);
                   _controller.pause();
                   if (dataMessage.sender.toString() == _username.toString()) {
-                    return Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                                color: Color.fromARGB(255, 204, 240, 205),
-                                borderRadius: BorderRadius.circular(5)),
-                            padding: EdgeInsets.all(3),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                dataMessage.type == "TEXT"
-                                    ? GestureDetector(
-                                        onLongPress: () {
-                                          Clipboard.setData(new ClipboardData(
-                                              text: dataMessage.message));
-                                        },
-                                        child: Text(
-                                            dataMessage.message.toString()))
-                                    : dataMessage.type == "IMAGE"
-                                        ? GestureDetector(
-                                            onTap: () {
-                                              Navigator.push(context,
-                                                  MaterialPageRoute(
-                                                builder: (context) {
-                                                  return ShowFullImageScreen(
-                                                    imageAddress: uri,
-                                                    sender: "ເຈົ້າ",
-                                                    hour: dataMessage.hour,
-                                                    minute: dataMessage.minute,
-                                                  );
-                                                },
-                                              ));
-                                            },
-                                            child: Container(
-                                              height: 200,
-                                              width: 200,
-                                              decoration: BoxDecoration(
-                                                  image: DecorationImage(
-                                                      image:
-                                                          MemoryImage(_bytes),
-                                                      fit: BoxFit.cover)),
-                                            ),
-                                          )
-                                        : GestureDetector(
-                                            onTap: () {
-                                              Navigator.push(context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) {
-                                                return PlayVideoScreen(
-                                                    videoAddress: uri,
-                                                    sender: 'ເຈົ້າ',
-                                                    hour: dataMessage.hour,
-                                                    minute: dataMessage.minute);
-                                              }));
-                                            },
-                                            child: Container(
-                                              height: 180,
-                                              width: 180,
-                                              child: AspectRatio(
-                                                aspectRatio: _controller
-                                                    .value.aspectRatio,
-                                                child: Stack(
-                                                    alignment: Alignment.center,
-                                                    children: [
-                                                      VideoPlayer(_controller),
-                                                      const Icon(
-                                                        Icons.play_arrow,
-                                                        color: Colors.white,
-                                                        size: 50,
-                                                      )
-                                                    ]),
-                                              ),
-                                            ),
-                                          ),
-                                Text(
-                                  '${dataMessage.hour}:${dataMessage.minute} ນ',
-                                  style: TextStyle(fontSize: 10),
-                                )
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                  return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(5)),
-                          padding: EdgeInsets.all(3),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              dataMessage.type == "TEXT"
-                                  ? GestureDetector(
+                    if (dataMessage.type == 'TEXT') {
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                  color: Color.fromARGB(255, 204, 240, 205),
+                                  borderRadius: BorderRadius.circular(5)),
+                              padding: EdgeInsets.all(3),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  GestureDetector(
                                       onLongPress: () {
                                         Clipboard.setData(new ClipboardData(
                                             text: dataMessage.message));
                                       },
                                       child:
-                                          Text(dataMessage.message.toString()))
-                                  : dataMessage.type == "IMAGE"
-                                      ? GestureDetector(
-                                          onTap: () {
-                                            Navigator.push(context,
-                                                MaterialPageRoute(
-                                              builder: (context) {
-                                                return ShowFullImageScreen(
-                                                  imageAddress: uri,
-                                                  sender: dataMessage.sender,
-                                                  hour: dataMessage.hour,
-                                                  minute: dataMessage.minute,
-                                                );
-                                              },
-                                            ));
-                                          },
-                                          child: Container(
-                                            height: 200,
-                                            width: 200,
-                                            decoration: BoxDecoration(
-                                                image: DecorationImage(
-                                                    image: MemoryImage(_bytes),
-                                                    fit: BoxFit.cover)),
-                                          ),
-                                        )
-                                      : GestureDetector(
-                                          onTap: () {
-                                            Navigator.push(context,
-                                                MaterialPageRoute(
-                                                    builder: (context) {
-                                              return PlayVideoScreen(
-                                                  videoAddress: uri,
-                                                  sender: dataMessage.sender,
-                                                  hour: dataMessage.hour,
-                                                  minute: dataMessage.minute);
-                                            }));
-                                          },
-                                          child: Container(
-                                            height: 180,
-                                            width: 180,
-                                            child: AspectRatio(
-                                              aspectRatio:
-                                                  _controller.value.aspectRatio,
-                                              child: Stack(
-                                                  alignment: Alignment.center,
-                                                  children: [
-                                                    VideoPlayer(_controller),
-                                                    const Icon(
-                                                      Icons.play_arrow,
-                                                      color: Colors.white,
-                                                      size: 50,
-                                                    )
-                                                  ]),
-                                            ),
+                                          Text(dataMessage.message.toString())),
+                                  Text(
+                                    '${dataMessage.hour}:${dataMessage.minute} ນ',
+                                    style: TextStyle(fontSize: 10),
+                                  )
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    } else if (dataMessage.type == "IMAGE") {
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                  color: Color.fromARGB(255, 204, 240, 205),
+                                  borderRadius: BorderRadius.circular(5)),
+                              padding: EdgeInsets.all(3),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(context, MaterialPageRoute(
+                                        builder: (context) {
+                                          return ShowFullImageScreen(
+                                            imageAddress: uri,
+                                            sender: "ເຈົ້າ",
+                                            hour: dataMessage.hour,
+                                            minute: dataMessage.minute,
+                                          );
+                                        },
+                                      ));
+                                    },
+                                    child: Container(
+                                      height: 200,
+                                      width: 200,
+                                      decoration: BoxDecoration(
+                                          image: DecorationImage(
+                                              image: MemoryImage(_bytes),
+                                              fit: BoxFit.cover)),
+                                    ),
+                                  ),
+                                  Text(
+                                    '${dataMessage.hour}:${dataMessage.minute} ນ',
+                                    style: TextStyle(fontSize: 10),
+                                  )
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    } else if (dataMessage.type == 'VIDEO') {
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                  color: Color.fromARGB(255, 204, 240, 205),
+                                  borderRadius: BorderRadius.circular(5)),
+                              padding: EdgeInsets.all(3),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(context,
+                                          MaterialPageRoute(builder: (context) {
+                                        return PlayVideoScreen(
+                                            videoAddress: uri,
+                                            sender: 'ເຈົ້າ',
+                                            hour: dataMessage.hour,
+                                            minute: dataMessage.minute);
+                                      }));
+                                    },
+                                    child: Container(
+                                      height: 180,
+                                      width: 180,
+                                      child: AspectRatio(
+                                        aspectRatio:
+                                            _controller.value.aspectRatio,
+                                        child: Stack(
+                                            alignment: Alignment.center,
+                                            children: [
+                                              VideoPlayer(_controller),
+                                              const Icon(
+                                                Icons.play_arrow,
+                                                color: Colors.white,
+                                                size: 50,
+                                              )
+                                            ]),
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    '${dataMessage.hour}:${dataMessage.minute} ນ',
+                                    style: TextStyle(fontSize: 10),
+                                  )
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    } else if (dataMessage.type == 'AUDIO') {
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                  color: Color.fromARGB(255, 204, 240, 205),
+                                  borderRadius: BorderRadius.circular(5)),
+                              padding: EdgeInsets.all(3),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Container(
+                                    height: 30,
+                                    width: 180,
+                                    child: Row(
+                                      children: [
+                                        IconButton(
+                                            onPressed: () {
+                                              playAudio(dataMessage.message);
+                                            },
+                                            icon: Icon(assetsAudioPlayer
+                                                    .isPlaying.value
+                                                ? Icons.pause
+                                                : Icons.play_arrow)),
+                                        Text(
+                                          '${position.toInt() ~/ 60}:${position.toInt() % 60}',
+                                          style: const TextStyle(
+                                              color: Colors.black),
+                                        ),
+                                        Expanded(
+                                          child: Slider(
+                                            min: 0.0,
+                                            max: durationData,
+                                            value: position,
+                                            onChanged: (value) {
+                                              setState(() {
+                                                position = value;
+                                              });
+                                            },
                                           ),
                                         ),
-                              Text(
-                                '${dataMessage.hour}:${dataMessage.minute} ນ',
-                                style: const TextStyle(fontSize: 10),
-                              )
-                            ],
-                          ),
+                                        Text(
+                                          '${durationData.toInt() ~/ 60}:${durationData.toInt() % 60}',
+                                          style: const TextStyle(
+                                              color: Colors.black),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Text(
+                                    '${dataMessage.hour}:${dataMessage.minute} ນ',
+                                    style: TextStyle(fontSize: 10),
+                                  )
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  );
+                      );
+                    } else {
+                      return Text('data');
+                    }
+                  } else {
+                    if (dataMessage.type == 'TEXT') {
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                  color: Color.fromARGB(255, 204, 240, 205),
+                                  borderRadius: BorderRadius.circular(5)),
+                              padding: EdgeInsets.all(3),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  GestureDetector(
+                                      onLongPress: () {
+                                        Clipboard.setData(new ClipboardData(
+                                            text: dataMessage.message));
+                                      },
+                                      child:
+                                          Text(dataMessage.message.toString())),
+                                  Text(
+                                    '${dataMessage.hour}:${dataMessage.minute} ນ',
+                                    style: TextStyle(fontSize: 10),
+                                  )
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    } else if (dataMessage.type == "IMAGE") {
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                  color: Color.fromARGB(255, 204, 240, 205),
+                                  borderRadius: BorderRadius.circular(5)),
+                              padding: EdgeInsets.all(3),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(context, MaterialPageRoute(
+                                        builder: (context) {
+                                          return ShowFullImageScreen(
+                                            imageAddress: uri,
+                                            sender: "ເຈົ້າ",
+                                            hour: dataMessage.hour,
+                                            minute: dataMessage.minute,
+                                          );
+                                        },
+                                      ));
+                                    },
+                                    child: Container(
+                                      height: 200,
+                                      width: 200,
+                                      decoration: BoxDecoration(
+                                          image: DecorationImage(
+                                              image: MemoryImage(_bytes),
+                                              fit: BoxFit.cover)),
+                                    ),
+                                  ),
+                                  Text(
+                                    '${dataMessage.hour}:${dataMessage.minute} ນ',
+                                    style: TextStyle(fontSize: 10),
+                                  )
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    } else if (dataMessage.type == 'VIDEO') {
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                  color: Color.fromARGB(255, 204, 240, 205),
+                                  borderRadius: BorderRadius.circular(5)),
+                              padding: EdgeInsets.all(3),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(context,
+                                          MaterialPageRoute(builder: (context) {
+                                        return PlayVideoScreen(
+                                            videoAddress: uri,
+                                            sender: 'ເຈົ້າ',
+                                            hour: dataMessage.hour,
+                                            minute: dataMessage.minute);
+                                      }));
+                                    },
+                                    child: Container(
+                                      height: 180,
+                                      width: 180,
+                                      child: AspectRatio(
+                                        aspectRatio:
+                                            _controller.value.aspectRatio,
+                                        child: Stack(
+                                            alignment: Alignment.center,
+                                            children: [
+                                              VideoPlayer(_controller),
+                                              const Icon(
+                                                Icons.play_arrow,
+                                                color: Colors.white,
+                                                size: 50,
+                                              )
+                                            ]),
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    '${dataMessage.hour}:${dataMessage.minute} ນ',
+                                    style: TextStyle(fontSize: 10),
+                                  )
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    } else if (dataMessage.type == 'AUDIO') {
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                  color: Color.fromARGB(255, 204, 240, 205),
+                                  borderRadius: BorderRadius.circular(5)),
+                              padding: EdgeInsets.all(3),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Container(
+                                    height: 30,
+                                    width: 180,
+                                    child: Row(
+                                      children: [
+                                        IconButton(
+                                            onPressed: () {
+                                                 playAudio(dataMessage.message);
+                                            },
+                                            icon: Icon(assetsAudioPlayer
+                                                    .isPlaying.value
+                                                ? Icons.pause
+                                                : Icons.play_arrow)),
+                                        Text(
+                                          '${position.toInt() ~/ 60}:${position.toInt() % 60}',
+                                          style: const TextStyle(
+                                              color: Colors.black),
+                                        ),
+                                        Expanded(
+                                          child: Slider(
+                                            min: 0.0,
+                                            max: durationData,
+                                            value: position,
+                                            onChanged: (value) {
+                                              setState(() {
+                                                position = value;
+                                              });
+                                            },
+                                          ),
+                                        ),
+                                        Text(
+                                          '${durationData.toInt() ~/ 60}:${durationData.toInt() % 60}',
+                                          style: const TextStyle(
+                                              color: Colors.black),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Text(
+                                    '${dataMessage.hour}:${dataMessage.minute} ນ',
+                                    style: TextStyle(fontSize: 10),
+                                  )
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    } else {
+                      return Text('data');
+                    }
+                  }
                 },
               ),
             );
@@ -544,6 +767,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   checkAudio() async {
+    Navigator.pop(context);
     FilePickerResult? result =
         await FilePicker.platform.pickFiles(type: FileType.audio);
     if (result!.files.single.path != null ||
@@ -637,5 +861,30 @@ class _ChatPageState extends State<ChatPage> {
             ),
           );
         });
+  }
+
+  void playAudio(String path) {
+    if (paths == null || paths.length < 0) {
+      setState(() {
+        paths = path;
+      });
+    } else {
+      if (paths == path) {
+        if (assetsAudioPlayer.currentPosition.value.inMilliseconds == 0) {
+          assetsAudioPlayer.open(Audio.file(path));
+        } else {
+          if (assetsAudioPlayer.isPlaying.value) {
+            assetsAudioPlayer.pause();
+          } else {
+            assetsAudioPlayer.play();
+          }
+        }
+      } else {
+        assetsAudioPlayer.open(Audio.file(path));
+        setState(() {
+          paths = path;
+        });
+      }
+    }
   }
 }

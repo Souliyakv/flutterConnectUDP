@@ -239,7 +239,6 @@ class ConnectSocketUDPProvider with ChangeNotifier {
 
   sendVideo(SendImageModel sendImageModel, BuildContext context, var trans) {
     var pvdImage = Provider.of<ChooseImageProvider>(context, listen: false);
-    var provider = Provider.of<TextMessageProvider>(context, listen: false);
     var allImageToSend = pvdImage.allImageToSend;
     var sendVideoData = {
       'data': {
@@ -252,6 +251,23 @@ class ConnectSocketUDPProvider with ChangeNotifier {
       'command': Ecommand().sendTotal
     };
     socket.send(utf8.encode(jsonEncode(sendVideoData)),
+        InternetAddress("${IpAddress().ipAddress}"), 2222);
+  }
+
+  sendAudio(SendImageModel sendImageModel, BuildContext context, var trans) {
+    var pvdImage = Provider.of<ChooseImageProvider>(context, listen: false);
+    var allImageToSend = pvdImage.allImageToSend;
+    var sendAudioData = {
+      'data': {
+        'total': allImageToSend[trans].length,
+        'channel': sendImageModel.channel,
+        'trans': trans,
+        'type': 'AUDIO'
+      },
+      'token': sendImageModel.token,
+      'command': Ecommand().sendTotal
+    };
+    socket.send(utf8.encode(jsonEncode(sendAudioData)),
         InternetAddress("${IpAddress().ipAddress}"), 2222);
   }
 

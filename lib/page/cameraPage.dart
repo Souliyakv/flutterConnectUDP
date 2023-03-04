@@ -160,20 +160,14 @@ class _CameraScreenState extends State<CameraScreen> {
   void recordTime() {
     int startTime = 0;
     Timer.periodic(const Duration(seconds: 1), (Timer t) {
-      // var diff = DateTime.now().difference(startTime);
       setState(() {
         startTime = startTime + 1;
         recordingTime =
             '${startTime ~/ 3600}:${startTime ~/ 60}:${startTime % 60}';
       });
-      // recordingTime =
-      //     '${diff.inHours < 60 ? diff.inHours : 0}:${diff.inMinutes < 60 ? diff.inMinutes : 0}:${diff.inSeconds < 60 ? diff.inSeconds : 0}';
-
       if (!_isRecording) {
-        t.cancel(); //cancel function calling
+        t.cancel();
       }
-
-      // setState(() {});
     });
   }
 }

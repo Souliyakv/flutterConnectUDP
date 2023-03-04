@@ -80,8 +80,35 @@ class ChooseImageProvider with ChangeNotifier {
     pvdMessage.addTextMessage(textMessageModel);
   }
 
-  chooseAudio(){
-    
+  chooseAudio(BuildContext context, var path, sender, channel) async {
+    var pvdConnect =
+        Provider.of<ConnectSocketUDPProvider>(context, listen: false);
+    var pvdMessage = Provider.of<TextMessageProvider>(context, listen: false);
+    file = File(path);
+    int chunkSize = 2000;
+    List<Uint8List> sperate = [];
+    imagebytes = await file!.readAsBytes();
+    print(imagebytes.length);
+    var keyIndex;
+
+    keyIndex = DateTime.now().millisecondsSinceEpoch;
+    for (int i = 0; i < imagebytes.length; i += chunkSize) {
+      int end =
+          i + chunkSize < imagebytes.length ? i + chunkSize : imagebytes.length;
+      sperate.add(imagebytes.sublist(i, end));
+    }
+    allImageToSend.addAll({keyIndex: sperate});
+    SendImageModel sendImageModel =
+        SendImageModel(token: sender, channel: channel);
+    pvdConnect.sendAudio(sendImageModel, context, keyIndex);
+    TextMessageModel textMessageModel = TextMessageModel(
+        message: path,
+        sender: sender.toString(),
+        hour: DateTime.now().hour.toString(),
+        minute: DateTime.now().minute.toString(),
+        channel: channel.toString(),
+        type: 'AUDIO');
+    pvdMessage.addTextMessage(textMessageModel);
   }
 
   void clearImage() {

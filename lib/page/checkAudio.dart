@@ -1,5 +1,7 @@
 import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/imageProvider.dart';
 
 class CheckAudioScreen extends StatefulWidget {
   final String sender;
@@ -108,7 +110,14 @@ class _CheckAudioScreenState extends State<CheckAudioScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.white,
-        onPressed: () {},
+        onPressed: () {
+          _play = false;
+          var provider =
+              Provider.of<ChooseImageProvider>(context, listen: false);
+          provider.chooseAudio(
+              context, widget.audioAddress, widget.sender, widget.channel);
+              Navigator.pop(context);
+        },
         child: const Icon(
           Icons.send,
           color: Colors.black,

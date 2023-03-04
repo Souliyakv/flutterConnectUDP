@@ -164,6 +164,29 @@ class GetImageProvider with ChangeNotifier {
               type: detailDataImage[pushBufferToImageModel.trans.toString()][2]
                   .toString());
           provider.addTextMessage(textMessageModel);
+        } else if (detailDataImage[pushBufferToImageModel.trans.toString()]
+                [2] ==
+            'AUDIO') {
+          Uint8List bytes = Uint8List.fromList(newList.cast<int>());
+          final dir = await getApplicationDocumentsDirectory();
+          File file = File("${dir.path}/" +
+              DateTime.now().millisecondsSinceEpoch.toString() +
+              ".mp3");
+          await file.writeAsBytes(bytes);
+          print("Save to :${file.path}");
+          TextMessageModel textMessageModel = TextMessageModel(
+              message: file.path,
+              sender: detailDataImage[pushBufferToImageModel.trans.toString()]
+                      [0]
+                  .toString(),
+              hour: DateTime.now().hour.toString(),
+              minute: DateTime.now().minute.toString(),
+              channel: detailDataImage[pushBufferToImageModel.trans.toString()]
+                      [1]
+                  .toString(),
+              type: detailDataImage[pushBufferToImageModel.trans.toString()][2]
+                  .toString());
+          provider.addTextMessage(textMessageModel);
         } else {
           String base64string = base64.encode(newList.cast<int>());
           var imageFireResult = "data:image/jpg;base64,$base64string";

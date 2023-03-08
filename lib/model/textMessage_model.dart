@@ -6,6 +6,7 @@ class TextMessageModel {
   late String minute;
   late String channel;
   late String type;
+  late int long;
 
   TextMessageModel(
       {required this.message,
@@ -13,7 +14,8 @@ class TextMessageModel {
       required this.hour,
       required this.minute,
       required this.channel,
-      required this.type});
+      required this.type,
+      required this.long});
 }
 
 class SendTextMessageModel {

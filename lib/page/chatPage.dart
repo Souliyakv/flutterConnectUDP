@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:demoudp/model/imageModel.dart';
 import 'package:demoudp/model/textMessage_model.dart';
 import 'package:demoudp/model/typingStatusModel.dart';
+import 'package:demoudp/page/callingPage.dart';
 import 'package:demoudp/page/cameraPage.dart';
 import 'package:demoudp/page/checkAudio.dart';
 import 'package:demoudp/page/checkVideo.dart';
@@ -23,6 +23,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 
+import '../widget/roundedChatpage.dart';
+
 class ChatPage extends StatefulWidget {
   final String username;
   final String password;
@@ -38,8 +40,9 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
-  final assetsAudioPlayer = AssetsAudioPlayer();
   String paths = '';
+  final assetsAudioPlayer = AssetsAudioPlayer();
+  String playIndex = '';
   @override
   void initState() {
     // TODO: implement initState
@@ -94,7 +97,7 @@ class _ChatPageState extends State<ChatPage> {
   File? file;
   // bool _play = false;
   double position = 0.0;
-  double durationData = 1.0;
+  double durationData = 350;
 
   void sendtxtMessage() {
     TextMessageModel textMessageModel = TextMessageModel(
@@ -103,7 +106,8 @@ class _ChatPageState extends State<ChatPage> {
         hour: DateTime.now().hour.toString(),
         minute: DateTime.now().minute.toString(),
         channel: _to,
-        type: "TEXT");
+        type: "TEXT",
+        long: 1);
     var provider = Provider.of<TextMessageProvider>(context, listen: false);
     var pvdConnect =
         Provider.of<ConnectSocketUDPProvider>(context, listen: false);
@@ -209,11 +213,23 @@ class _ChatPageState extends State<ChatPage> {
                 icon: const Icon(Icons.video_camera_back)),
             IconButton(
                 onPressed: () {
-          Navigator.push(context,MaterialPageRoute(builder: (context){
-            return RecodeAudioScreen(sender: _username,channel: _to,);
-          }));
+                  Navigator.push(context, MaterialPageRoute(builder: (context) {
+                    return RecodeAudioScreen(
+                      sender: _username,
+                      channel: _to,
+                    );
+                  }));
                 },
-                icon: const Icon(Icons.record_voice_over_sharp))
+                icon: const Icon(Icons.record_voice_over_sharp)),
+            IconButton(
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (context) {
+                      return CallingScreen(channel: _to, sender: _username);
+                    },
+                  ));
+                },
+                icon: const Icon(Icons.call))
           ],
         ),
         bottomSheet: Container(
@@ -331,13 +347,17 @@ class _ChatPageState extends State<ChatPage> {
             return Padding(
               padding: EdgeInsets.only(bottom: 55),
               child: ListView.builder(
-                itemCount: textMessagePro.getMessage(_to.toString()) == null
+                itemCount: textMessagePro.getMessage(
+                            _to.toString(), _username.toString()) ==
+                        null
                     ? 0
-                    : textMessagePro.getMessage(_to.toString()).length,
+                    : textMessagePro
+                        .getMessage(_to.toString(), _username.toString())
+                        .length,
                 reverse: true,
                 itemBuilder: (context, index) {
-                  TextMessageModel dataMessage =
-                      textMessagePro.getMessage(_to.toString())[index];
+                  TextMessageModel dataMessage = textMessagePro.getMessage(
+                      _to.toString(), _username.toString())[index];
                   String uri = dataMessage.message.toString();
                   late Uint8List _bytes = base64.decode(uri.split(',').last);
                   // late VideoPlayerController _controller;
@@ -346,402 +366,538 @@ class _ChatPageState extends State<ChatPage> {
                   late Future<void> _initializeVideoPlayerFuture;
                   late VideoPlayerController _controller =
                       VideoPlayerController.file(file);
+
                   _initializeVideoPlayerFuture = _controller.initialize();
                   _controller.setLooping(false);
                   _controller.pause();
                   if (dataMessage.sender.toString() == _username.toString()) {
-                    if (dataMessage.type == 'TEXT') {
-                      return Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                  color: Color.fromARGB(255, 204, 240, 205),
-                                  borderRadius: BorderRadius.circular(5)),
-                              padding: EdgeInsets.all(3),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  GestureDetector(
-                                      onLongPress: () {
-                                        Clipboard.setData(new ClipboardData(
-                                            text: dataMessage.message));
+                    switch (dataMessage.type) {
+                      case "TEXT":
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              RoundedChatMessage(
+                                  message: dataMessage.message,
+                                  hour: dataMessage.hour,
+                                  minute: dataMessage.minute)
+                            ],
+                          ),
+                        );
+                      case "IMAGE":
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              RoundedChatImage(
+                                  onTap: () {
+                                    Navigator.push(context, MaterialPageRoute(
+                                      builder: (context) {
+                                        return ShowFullImageScreen(
+                                          imageAddress: uri,
+                                          sender: "ເຈົ້າ",
+                                          hour: dataMessage.hour,
+                                          minute: dataMessage.minute,
+                                        );
                                       },
-                                      child:
-                                          Text(dataMessage.message.toString())),
-                                  Text(
-                                    '${dataMessage.hour}:${dataMessage.minute} ນ',
-                                    style: TextStyle(fontSize: 10),
-                                  )
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    } else if (dataMessage.type == "IMAGE") {
-                      return Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                  color: Color.fromARGB(255, 204, 240, 205),
-                                  borderRadius: BorderRadius.circular(5)),
-                              padding: EdgeInsets.all(3),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(context, MaterialPageRoute(
-                                        builder: (context) {
-                                          return ShowFullImageScreen(
-                                            imageAddress: uri,
-                                            sender: "ເຈົ້າ",
-                                            hour: dataMessage.hour,
-                                            minute: dataMessage.minute,
-                                          );
-                                        },
-                                      ));
-                                    },
-                                    child: Container(
-                                      height: 200,
-                                      width: 200,
-                                      decoration: BoxDecoration(
-                                          image: DecorationImage(
-                                              image: MemoryImage(_bytes),
-                                              fit: BoxFit.cover)),
-                                    ),
-                                  ),
-                                  Text(
-                                    '${dataMessage.hour}:${dataMessage.minute} ນ',
-                                    style: TextStyle(fontSize: 10),
-                                  )
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    } else if (dataMessage.type == 'VIDEO') {
-                      return Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                  color: Color.fromARGB(255, 204, 240, 205),
-                                  borderRadius: BorderRadius.circular(5)),
-                              padding: EdgeInsets.all(3),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(context,
-                                          MaterialPageRoute(builder: (context) {
-                                        return PlayVideoScreen(
-                                            videoAddress: uri,
-                                            sender: 'ເຈົ້າ',
-                                            hour: dataMessage.hour,
-                                            minute: dataMessage.minute);
-                                      }));
-                                    },
-                                    child: Container(
-                                      height: 180,
-                                      width: 180,
-                                      child: AspectRatio(
-                                        aspectRatio:
-                                            _controller.value.aspectRatio,
-                                        child: Stack(
-                                            alignment: Alignment.center,
-                                            children: [
-                                              VideoPlayer(_controller),
-                                              const Icon(
-                                                Icons.play_arrow,
-                                                color: Colors.white,
-                                                size: 50,
-                                              )
-                                            ]),
-                                      ),
-                                    ),
-                                  ),
-                                  Text(
-                                    '${dataMessage.hour}:${dataMessage.minute} ນ',
-                                    style: TextStyle(fontSize: 10),
-                                  )
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    } else if (dataMessage.type == 'AUDIO') {
-                      return Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                  color: Color.fromARGB(255, 204, 240, 205),
-                                  borderRadius: BorderRadius.circular(5)),
-                              padding: EdgeInsets.all(3),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Container(
-                                    height: 30,
-                                    width: 180,
-                                    child: Row(
-                                      children: [
-                                        IconButton(
-                                            onPressed: () {
-                                              playAudio(dataMessage.message);
-                                            },
-                                            icon: Icon(assetsAudioPlayer
-                                                    .isPlaying.value
-                                                ? Icons.pause
-                                                : Icons.play_arrow)),
-                                        Text(
-                                          '${position.toInt() ~/ 60}:${position.toInt() % 60}',
-                                          style: const TextStyle(
-                                              color: Colors.black),
-                                        ),
-                                        Expanded(
-                                          child: Slider(
-                                            min: 0.0,
-                                            max: durationData,
-                                            value: position,
-                                            onChanged: (value) {
-                                              setState(() {
-                                                position = value;
-                                              });
+                                    ));
+                                  },
+                                  bytes: _bytes,
+                                  hour: dataMessage.hour,
+                                  minute: dataMessage.minute)
+                            ],
+                          ),
+                        );
+                      case "VIDEO":
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              RoundedChatVideo(
+                                  onTap: () {
+                                    Navigator.push(context,
+                                        MaterialPageRoute(builder: (context) {
+                                      return PlayVideoScreen(
+                                          videoAddress: uri,
+                                          sender: 'ເຈົ້າ',
+                                          hour: dataMessage.hour,
+                                          minute: dataMessage.minute);
+                                    }));
+                                  },
+                                  hour: dataMessage.hour,
+                                  minute: dataMessage.minute,
+                                  controller: _controller)
+                            ],
+                          ),
+                        );
+                      case "AUDIO":
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                    color: Color.fromARGB(255, 204, 240, 205),
+                                    borderRadius: BorderRadius.circular(5)),
+                                padding: EdgeInsets.all(3),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Container(
+                                      height: 30,
+                                      width: 230,
+                                      child: Row(
+                                        children: [
+                                          IconButton(
+                                              onPressed: () {
+                                                if (paths == null ||
+                                                    paths.length < 0) {
+                                                  setState(() {
+                                                    paths = dataMessage.message;
+                                                  });
+                                                } else {
+                                                  if (paths ==
+                                                      dataMessage.message) {
+                                                    if (assetsAudioPlayer
+                                                            .currentPosition
+                                                            .value
+                                                            .inMilliseconds ==
+                                                        0) {
+                                                      assetsAudioPlayer.open(
+                                                          Audio.file(dataMessage
+                                                              .message));
+                                                    } else {
+                                                      if (assetsAudioPlayer
+                                                          .isPlaying.value) {
+                                                        assetsAudioPlayer
+                                                            .pause();
+                                                      } else {
+                                                        assetsAudioPlayer
+                                                            .play();
+                                                      }
+                                                    }
+                                                  } else {
+                                                    assetsAudioPlayer.open(
+                                                        Audio.file(dataMessage
+                                                            .message));
+
+                                                    setState(() {
+                                                      paths =
+                                                          dataMessage.message;
+                                                      playIndex =
+                                                          dataMessage.message;
+                                                    });
+                                                  }
+                                                }
+                                              },
+                                              icon: StreamBuilder(
+                                                stream:
+                                                    assetsAudioPlayer.isPlaying,
+                                                builder: (context, snapshot) {
+                                                  if (snapshot.hasData) {
+                                                    final bool isPlaying =
+                                                        snapshot.data!;
+                                                    return playIndex !=
+                                                            dataMessage.message
+                                                        ? const Icon(
+                                                            Icons.play_arrow)
+                                                        : Icon(isPlaying
+                                                            ? Icons.pause
+                                                            : Icons.play_arrow);
+                                                  } else {
+                                                    return Icon(Icons.pause);
+                                                  }
+                                                },
+                                              )),
+                                          StreamBuilder(
+                                            stream: assetsAudioPlayer
+                                                .currentPosition,
+                                            builder: (context, snapshot) {
+                                              if (snapshot.hasData) {
+                                                int position1 =
+                                                    snapshot.data!.inSeconds;
+                                                return playIndex !=
+                                                        dataMessage.message
+                                                    ? Text("0:0")
+                                                    : Text(
+                                                        '${position1.toInt() ~/ 60}:${position1.toInt() % 60}',
+                                                        style: const TextStyle(
+                                                            color:
+                                                                Colors.black),
+                                                      );
+                                              } else {
+                                                return Text('0:0');
+                                              }
                                             },
                                           ),
-                                        ),
-                                        Text(
-                                          '${durationData.toInt() ~/ 60}:${durationData.toInt() % 60}',
-                                          style: const TextStyle(
-                                              color: Colors.black),
-                                        ),
-                                      ],
+                                          PlayerBuilder.currentPosition(
+                                            player: assetsAudioPlayer,
+                                            builder: (context, position) {
+                                              return Expanded(
+                                                child: Slider(
+                                                  activeColor: Colors.blue,
+                                                  inactiveColor: Colors.grey,
+                                                  min: 0.0,
+                                                  max: dataMessage.long
+                                                      .toDouble(),
+                                                  value: playIndex !=
+                                                          dataMessage.message
+                                                      ? 0.0
+                                                      : position.inSeconds
+                                                          .toDouble(),
+                                                  onChanged: (value) {
+                                                    assetsAudioPlayer.seekBy(
+                                                        const Duration(
+                                                            seconds: 10));
+                                                  },
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                          playIndex == dataMessage.message
+                                              ? GestureDetector(
+                                                  onTap: () {
+                                                    assetsAudioPlayer
+                                                        .setPlaySpeed(1);
+                                                    if (assetsAudioPlayer
+                                                            .playSpeed.value >=
+                                                        2.0) {
+                                                      assetsAudioPlayer
+                                                          .setPlaySpeed(0.5);
+                                                    } else {
+                                                      double playSpeed =
+                                                          assetsAudioPlayer
+                                                              .playSpeed.value;
+                                                      assetsAudioPlayer
+                                                          .setPlaySpeed(
+                                                              playSpeed + 0.5);
+                                                    }
+                                                  },
+                                                  child: Stack(
+                                                    alignment: Alignment.center,
+                                                    children: [
+                                                      Container(
+                                                        width: 30,
+                                                        height: 20,
+                                                        decoration: BoxDecoration(
+                                                            color:
+                                                                Colors.blueGrey,
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        10)),
+                                                      ),
+                                                      StreamBuilder(
+                                                        stream:
+                                                            assetsAudioPlayer
+                                                                .playSpeed,
+                                                        builder: (context,
+                                                            snapshot) {
+                                                          if (snapshot
+                                                              .hasData) {
+                                                            return Text(
+                                                              '${snapshot.data}x',
+                                                              style: const TextStyle(
+                                                                  color: Colors
+                                                                      .white),
+                                                            );
+                                                          } else {
+                                                            return const Text(
+                                                                '1x');
+                                                          }
+                                                        },
+                                                      )
+                                                    ],
+                                                  ))
+                                              : Text(
+                                                  '${dataMessage.long ~/ 60}:${dataMessage.long % 60}',
+                                                  style: const TextStyle(
+                                                      color: Colors.black),
+                                                ),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    '${dataMessage.hour}:${dataMessage.minute} ນ',
-                                    style: TextStyle(fontSize: 10),
-                                  )
-                                ],
+                                    Text(
+                                      '${dataMessage.hour}:${dataMessage.minute} ນ',
+                                      style: TextStyle(fontSize: 10),
+                                    )
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      );
-                    } else {
-                      return Text('data');
+                            ],
+                          ),
+                        );
+                      default:
+                        return Text('data');
                     }
                   } else {
-                    if (dataMessage.type == 'TEXT') {
-                      return Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                  color: Color.fromARGB(255, 204, 240, 205),
-                                  borderRadius: BorderRadius.circular(5)),
-                              padding: EdgeInsets.all(3),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  GestureDetector(
-                                      onLongPress: () {
-                                        Clipboard.setData(new ClipboardData(
-                                            text: dataMessage.message));
+                    switch (dataMessage.type) {
+                      case "TEXT":
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              RoundedChatMessage(
+                                  message: dataMessage.message,
+                                  hour: dataMessage.hour,
+                                  minute: dataMessage.minute)
+                            ],
+                          ),
+                        );
+                      case "IMAGE":
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              RoundedChatImage(
+                                  onTap: () {
+                                    Navigator.push(context, MaterialPageRoute(
+                                      builder: (context) {
+                                        return ShowFullImageScreen(
+                                          imageAddress: uri,
+                                          sender: "ເຈົ້າ",
+                                          hour: dataMessage.hour,
+                                          minute: dataMessage.minute,
+                                        );
                                       },
-                                      child:
-                                          Text(dataMessage.message.toString())),
-                                  Text(
-                                    '${dataMessage.hour}:${dataMessage.minute} ນ',
-                                    style: TextStyle(fontSize: 10),
-                                  )
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    } else if (dataMessage.type == "IMAGE") {
-                      return Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                  color: Color.fromARGB(255, 204, 240, 205),
-                                  borderRadius: BorderRadius.circular(5)),
-                              padding: EdgeInsets.all(3),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(context, MaterialPageRoute(
-                                        builder: (context) {
-                                          return ShowFullImageScreen(
-                                            imageAddress: uri,
-                                            sender: "ເຈົ້າ",
-                                            hour: dataMessage.hour,
-                                            minute: dataMessage.minute,
-                                          );
-                                        },
-                                      ));
-                                    },
-                                    child: Container(
-                                      height: 200,
-                                      width: 200,
-                                      decoration: BoxDecoration(
-                                          image: DecorationImage(
-                                              image: MemoryImage(_bytes),
-                                              fit: BoxFit.cover)),
-                                    ),
-                                  ),
-                                  Text(
-                                    '${dataMessage.hour}:${dataMessage.minute} ນ',
-                                    style: TextStyle(fontSize: 10),
-                                  )
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    } else if (dataMessage.type == 'VIDEO') {
-                      return Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                  color: Color.fromARGB(255, 204, 240, 205),
-                                  borderRadius: BorderRadius.circular(5)),
-                              padding: EdgeInsets.all(3),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(context,
-                                          MaterialPageRoute(builder: (context) {
-                                        return PlayVideoScreen(
-                                            videoAddress: uri,
-                                            sender: 'ເຈົ້າ',
-                                            hour: dataMessage.hour,
-                                            minute: dataMessage.minute);
-                                      }));
-                                    },
-                                    child: Container(
-                                      height: 180,
-                                      width: 180,
-                                      child: AspectRatio(
-                                        aspectRatio:
-                                            _controller.value.aspectRatio,
-                                        child: Stack(
-                                            alignment: Alignment.center,
-                                            children: [
-                                              VideoPlayer(_controller),
-                                              const Icon(
-                                                Icons.play_arrow,
-                                                color: Colors.white,
-                                                size: 50,
-                                              )
-                                            ]),
-                                      ),
-                                    ),
-                                  ),
-                                  Text(
-                                    '${dataMessage.hour}:${dataMessage.minute} ນ',
-                                    style: TextStyle(fontSize: 10),
-                                  )
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    } else if (dataMessage.type == 'AUDIO') {
-                      return Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                  color: Color.fromARGB(255, 204, 240, 205),
-                                  borderRadius: BorderRadius.circular(5)),
-                              padding: EdgeInsets.all(3),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Container(
-                                    height: 30,
-                                    width: 180,
-                                    child: Row(
-                                      children: [
-                                        IconButton(
-                                            onPressed: () {
-                                                 playAudio(dataMessage.message);
-                                            },
-                                            icon: Icon(assetsAudioPlayer
-                                                    .isPlaying.value
-                                                ? Icons.pause
-                                                : Icons.play_arrow)),
-                                        Text(
-                                          '${position.toInt() ~/ 60}:${position.toInt() % 60}',
-                                          style: const TextStyle(
-                                              color: Colors.black),
-                                        ),
-                                        Expanded(
-                                          child: Slider(
-                                            min: 0.0,
-                                            max: durationData,
-                                            value: position,
-                                            onChanged: (value) {
-                                              setState(() {
-                                                position = value;
-                                              });
+                                    ));
+                                  },
+                                  bytes: _bytes,
+                                  hour: dataMessage.hour,
+                                  minute: dataMessage.minute)
+                            ],
+                          ),
+                        );
+                      case "VIDEO":
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              RoundedChatVideo(
+                                  onTap: () {
+                                    Navigator.push(context,
+                                        MaterialPageRoute(builder: (context) {
+                                      return PlayVideoScreen(
+                                          videoAddress: uri,
+                                          sender: 'ເຈົ້າ',
+                                          hour: dataMessage.hour,
+                                          minute: dataMessage.minute);
+                                    }));
+                                  },
+                                  hour: dataMessage.hour,
+                                  minute: dataMessage.minute,
+                                  controller: _controller)
+                            ],
+                          ),
+                        );
+                      case "AUDIO":
+                        //  int durationData = assetsAudioPlayer.current.
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                    color: Color.fromARGB(255, 204, 240, 205),
+                                    borderRadius: BorderRadius.circular(5)),
+                                padding: EdgeInsets.all(3),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Container(
+                                      height: 30,
+                                      width: 230,
+                                      child: Row(
+                                        children: [
+                                          IconButton(
+                                              onPressed: () {
+                                                if (paths == null ||
+                                                    paths.length < 0) {
+                                                  setState(() {
+                                                    paths = dataMessage.message;
+                                                  });
+                                                } else {
+                                                  if (paths ==
+                                                      dataMessage.message) {
+                                                    if (assetsAudioPlayer
+                                                            .currentPosition
+                                                            .value
+                                                            .inMilliseconds ==
+                                                        0) {
+                                                      assetsAudioPlayer.open(
+                                                          Audio.file(dataMessage
+                                                              .message));
+                                                    } else {
+                                                      if (assetsAudioPlayer
+                                                          .isPlaying.value) {
+                                                        assetsAudioPlayer
+                                                            .pause();
+                                                      } else {
+                                                        assetsAudioPlayer
+                                                            .play();
+                                                      }
+                                                    }
+                                                  } else {
+                                                    assetsAudioPlayer.open(
+                                                        Audio.file(dataMessage
+                                                            .message));
+
+                                                    setState(() {
+                                                      paths =
+                                                          dataMessage.message;
+                                                      playIndex =
+                                                          dataMessage.message;
+                                                    });
+                                                  }
+                                                }
+                                              },
+                                              icon: StreamBuilder(
+                                                stream:
+                                                    assetsAudioPlayer.isPlaying,
+                                                builder: (context, snapshot) {
+                                                  if (snapshot.hasData) {
+                                                    final bool isPlaying =
+                                                        snapshot.data!;
+                                                    return playIndex !=
+                                                            dataMessage.message
+                                                        ? const Icon(
+                                                            Icons.play_arrow)
+                                                        : Icon(isPlaying
+                                                            ? Icons.pause
+                                                            : Icons.play_arrow);
+                                                  } else {
+                                                    return Icon(Icons.pause);
+                                                  }
+                                                },
+                                              )),
+                                          StreamBuilder(
+                                            stream: assetsAudioPlayer
+                                                .currentPosition,
+                                            builder: (context, snapshot) {
+                                              if (snapshot.hasData) {
+                                                int position1 =
+                                                    snapshot.data!.inSeconds;
+                                                return playIndex !=
+                                                        dataMessage.message
+                                                    ? Text("0:0")
+                                                    : Text(
+                                                        '${position1.toInt() ~/ 60}:${position1.toInt() % 60}',
+                                                        style: const TextStyle(
+                                                            color:
+                                                                Colors.black),
+                                                      );
+                                              } else {
+                                                return Text('0:0');
+                                              }
                                             },
                                           ),
-                                        ),
-                                        Text(
-                                          '${durationData.toInt() ~/ 60}:${durationData.toInt() % 60}',
-                                          style: const TextStyle(
-                                              color: Colors.black),
-                                        ),
-                                      ],
+                                          PlayerBuilder.currentPosition(
+                                            player: assetsAudioPlayer,
+                                            builder: (context, position) {
+                                              return Expanded(
+                                                child: Slider(
+                                                  activeColor: Colors.blue,
+                                                  inactiveColor: Colors.grey,
+                                                  min: 0.0,
+                                                  max: dataMessage.long
+                                                      .toDouble(),
+                                                  value: playIndex !=
+                                                          dataMessage.message
+                                                      ? 0.0
+                                                      : position.inSeconds
+                                                          .toDouble(),
+                                                  onChanged: (value) {
+                                                    assetsAudioPlayer.seekBy(
+                                                        const Duration(
+                                                            seconds: 10));
+                                                  },
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                          playIndex == dataMessage.message
+                                              ? GestureDetector(
+                                                  onTap: () {
+                                                    assetsAudioPlayer
+                                                        .setPlaySpeed(1);
+                                                    if (assetsAudioPlayer
+                                                            .playSpeed.value >=
+                                                        2.0) {
+                                                      assetsAudioPlayer
+                                                          .setPlaySpeed(0.5);
+                                                    } else {
+                                                      double playSpeed =
+                                                          assetsAudioPlayer
+                                                              .playSpeed.value;
+                                                      assetsAudioPlayer
+                                                          .setPlaySpeed(
+                                                              playSpeed + 0.5);
+                                                    }
+                                                  },
+                                                  child: Stack(
+                                                    alignment: Alignment.center,
+                                                    children: [
+                                                      Container(
+                                                        width: 30,
+                                                        height: 20,
+                                                        decoration: BoxDecoration(
+                                                            color:
+                                                                Colors.blueGrey,
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        10)),
+                                                      ),
+                                                      StreamBuilder(
+                                                        stream:
+                                                            assetsAudioPlayer
+                                                                .playSpeed,
+                                                        builder: (context,
+                                                            snapshot) {
+                                                          if (snapshot
+                                                              .hasData) {
+                                                            return Text(
+                                                              '${snapshot.data}x',
+                                                              style: const TextStyle(
+                                                                  color: Colors
+                                                                      .white),
+                                                            );
+                                                          } else {
+                                                            return const Text(
+                                                                '1x');
+                                                          }
+                                                        },
+                                                      )
+                                                    ],
+                                                  ))
+                                              : Text(
+                                                  '${dataMessage.long ~/ 60}:${dataMessage.long % 60}',
+                                                  style: const TextStyle(
+                                                      color: Colors.black),
+                                                ),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    '${dataMessage.hour}:${dataMessage.minute} ນ',
-                                    style: TextStyle(fontSize: 10),
-                                  )
-                                ],
+                                    Text(
+                                      '${dataMessage.hour}:${dataMessage.minute} ນ',
+                                      style: TextStyle(fontSize: 10),
+                                    )
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      );
-                    } else {
-                      return Text('data');
+                            ],
+                          ),
+                        );
+                      default:
+                        return Text('data');
                     }
                   }
                 },
@@ -861,30 +1017,5 @@ class _ChatPageState extends State<ChatPage> {
             ),
           );
         });
-  }
-
-  void playAudio(String path) {
-    if (paths == null || paths.length < 0) {
-      setState(() {
-        paths = path;
-      });
-    } else {
-      if (paths == path) {
-        if (assetsAudioPlayer.currentPosition.value.inMilliseconds == 0) {
-          assetsAudioPlayer.open(Audio.file(path));
-        } else {
-          if (assetsAudioPlayer.isPlaying.value) {
-            assetsAudioPlayer.pause();
-          } else {
-            assetsAudioPlayer.play();
-          }
-        }
-      } else {
-        assetsAudioPlayer.open(Audio.file(path));
-        setState(() {
-          paths = path;
-        });
-      }
-    }
   }
 }

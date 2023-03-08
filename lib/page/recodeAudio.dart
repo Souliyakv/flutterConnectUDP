@@ -22,6 +22,7 @@ class _RecodeAudioScreenState extends State<RecodeAudioScreen> {
   bool isComplete = false;
   bool isRecode = true;
   String recordingTime = '00:00';
+  late int longTime;
 
   @override
   void initState() {
@@ -65,7 +66,7 @@ class _RecodeAudioScreenState extends State<RecodeAudioScreen> {
     }
     var provider = Provider.of<ChooseImageProvider>(context, listen: false);
     provider.chooseAudio(
-        context, recordFilePath, widget.sender, widget.channel);
+        context, recordFilePath, widget.sender, widget.channel, longTime);
     Navigator.pop(context);
   }
 
@@ -98,8 +99,8 @@ class _RecodeAudioScreenState extends State<RecodeAudioScreen> {
       } else {
         setState(() {
           startTime = startTime + 1;
-          recordingTime =
-              '${startTime ~/ 60}:${startTime % 60}';
+          recordingTime = '${startTime ~/ 60}:${startTime % 60}';
+          longTime = startTime - 1;
         });
         if (!isRecode) {
           t.cancel();

@@ -75,12 +75,13 @@ class ChooseImageProvider with ChangeNotifier {
         hour: DateTime.now().hour.toString(),
         minute: DateTime.now().minute.toString(),
         channel: channel.toString(),
-        type: 'VIDEO');
+        type: 'VIDEO',
+        long: 1);
     print(path);
     pvdMessage.addTextMessage(textMessageModel);
   }
 
-  chooseAudio(BuildContext context, var path, sender, channel) async {
+  chooseAudio(BuildContext context, var path, sender, channel, int long) async {
     var pvdConnect =
         Provider.of<ConnectSocketUDPProvider>(context, listen: false);
     var pvdMessage = Provider.of<TextMessageProvider>(context, listen: false);
@@ -100,14 +101,15 @@ class ChooseImageProvider with ChangeNotifier {
     allImageToSend.addAll({keyIndex: sperate});
     SendImageModel sendImageModel =
         SendImageModel(token: sender, channel: channel);
-    pvdConnect.sendAudio(sendImageModel, context, keyIndex);
+    pvdConnect.sendAudio(sendImageModel, context, keyIndex, long);
     TextMessageModel textMessageModel = TextMessageModel(
         message: path,
         sender: sender.toString(),
         hour: DateTime.now().hour.toString(),
         minute: DateTime.now().minute.toString(),
         channel: channel.toString(),
-        type: 'AUDIO');
+        type: 'AUDIO',
+        long: long);
     pvdMessage.addTextMessage(textMessageModel);
   }
 

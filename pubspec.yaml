@@ -48,6 +48,7 @@ dependencies:
   assets_audio_player: ^3.0.6
   record_mp3: ^3.0.0
   permission_handler: ^10.2.0
+  flutter_local_notifications: ^13.0.0
 
 
 dev_dependencies:

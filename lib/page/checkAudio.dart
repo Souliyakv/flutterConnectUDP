@@ -114,9 +114,9 @@ class _CheckAudioScreenState extends State<CheckAudioScreen> {
           _play = false;
           var provider =
               Provider.of<ChooseImageProvider>(context, listen: false);
-          provider.chooseAudio(
-              context, widget.audioAddress, widget.sender, widget.channel);
-              Navigator.pop(context);
+          provider.chooseAudio(context, widget.audioAddress, widget.sender,
+              widget.channel, durationData.toInt());
+          Navigator.pop(context);
         },
         child: const Icon(
           Icons.send,

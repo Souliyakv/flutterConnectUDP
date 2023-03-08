@@ -30,7 +30,8 @@ class GetImageProvider with ChangeNotifier {
       detailImageModel.trans: [
         detailImageModel.sender.toString(),
         detailImageModel.channel.toString(),
-        detailImageModel.type.toString()
+        detailImageModel.type.toString(),
+        detailImageModel.long
       ]
     });
     print(detailImageModel.type);
@@ -162,7 +163,7 @@ class GetImageProvider with ChangeNotifier {
                       [1]
                   .toString(),
               type: detailDataImage[pushBufferToImageModel.trans.toString()][2]
-                  .toString());
+                  .toString(),long: 1);
           provider.addTextMessage(textMessageModel);
         } else if (detailDataImage[pushBufferToImageModel.trans.toString()]
                 [2] ==
@@ -185,7 +186,9 @@ class GetImageProvider with ChangeNotifier {
                       [1]
                   .toString(),
               type: detailDataImage[pushBufferToImageModel.trans.toString()][2]
-                  .toString());
+                  .toString(),
+              long: detailDataImage[pushBufferToImageModel.trans.toString()]
+                  [3]);
           provider.addTextMessage(textMessageModel);
         } else {
           String base64string = base64.encode(newList.cast<int>());
@@ -201,7 +204,8 @@ class GetImageProvider with ChangeNotifier {
                       [1]
                   .toString(),
               type: detailDataImage[pushBufferToImageModel.trans.toString()][2]
-                  .toString());
+                  .toString(),
+              long: 1);
           provider.addTextMessage(textMessageModel);
         }
 

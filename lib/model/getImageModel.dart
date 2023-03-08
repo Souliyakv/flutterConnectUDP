@@ -15,11 +15,13 @@ class DetailImageModel {
   late String sender;
   late String channel;
   late String type;
+  late int long;
   DetailImageModel({
     required this.trans,
     required this.sender,
     required this.channel,
-    required this.type
+    required this.type,
+    required this.long
   });
 }
 

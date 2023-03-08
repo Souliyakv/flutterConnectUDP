@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:demoudp/model/getImageModel.dart';
 import 'package:demoudp/model/imageModel.dart';
 import 'package:demoudp/model/typingStatusModel.dart';
@@ -23,7 +22,7 @@ class ConnectSocketUDPProvider with ChangeNotifier {
     var pvdGetImage = Provider.of<GetImageProvider>(context, listen: false);
     var provider = Provider.of<TextMessageProvider>(context, listen: false);
     var pvdImage = Provider.of<ChooseImageProvider>(context, listen: false);
-    RawDatagramSocket.bind(InternetAddress.anyIPv4, 2222)
+    RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 2222)
         .then((RawDatagramSocket socket) {
       this.socket = socket;
       this.socket.listen((event) {
@@ -41,7 +40,8 @@ class ConnectSocketUDPProvider with ChangeNotifier {
                   hour: json.decode(data)['hour'],
                   minute: json.decode(data)['minute'],
                   channel: json.decode(data)['channel'],
-                  type: json.decode(data)['type']);
+                  type: json.decode(data)['type'],
+                  long: 1);
               provider.addTextMessage(textMessageModel);
               break;
 
@@ -64,9 +64,13 @@ class ConnectSocketUDPProvider with ChangeNotifier {
                   trans: json.decode(data)['trans'].toString(),
                   sender: json.decode(data)['sender'].toString(),
                   channel: json.decode(data)['channel'].toString(),
-                  type: json.decode(data)['type']);
+                  type: json.decode(data)['type'],
+                  long: json.decode(data)['long'] == null
+                      ? 1
+                      : json.decode(data)['long']);
               pvdGetImage.addDetailImage(detailImageModel);
               pvdGetImage.sendTotal(getTotalModel, context);
+
               break;
             case "confirmToSend":
               ConfirmToSendModel sendModel = ConfirmToSendModel(
@@ -230,7 +234,8 @@ class ConnectSocketUDPProvider with ChangeNotifier {
           hour: DateTime.now().hour.toString(),
           minute: DateTime.now().minute.toString(),
           channel: sendImageModel.channel,
-          type: "IMAGE");
+          type: "IMAGE",
+          long: 1);
       provider.addTextMessage(textMessageModel);
     }
     pvdImage.clearImage();
@@ -254,7 +259,8 @@ class ConnectSocketUDPProvider with ChangeNotifier {
         InternetAddress("${IpAddress().ipAddress}"), 2222);
   }
 
-  sendAudio(SendImageModel sendImageModel, BuildContext context, var trans) {
+  sendAudio(SendImageModel sendImageModel, BuildContext context, var trans,
+      int long) {
     var pvdImage = Provider.of<ChooseImageProvider>(context, listen: false);
     var allImageToSend = pvdImage.allImageToSend;
     var sendAudioData = {
@@ -262,7 +268,8 @@ class ConnectSocketUDPProvider with ChangeNotifier {
         'total': allImageToSend[trans].length,
         'channel': sendImageModel.channel,
         'trans': trans,
-        'type': 'AUDIO'
+        'type': 'AUDIO',
+        'long': long
       },
       'token': sendImageModel.token,
       'command': Ecommand().sendTotal

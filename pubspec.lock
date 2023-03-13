@@ -36,6 +36,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.9.0"
+  audio_session:
+    dependency: transitive
+    description:
+      name: audio_session
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.1.13"
   boolean_selector:
     dependency: transitive
     description:
@@ -174,6 +181,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_audio_capture:
+    dependency: "direct main"
+    description:
+      name: flutter_audio_capture
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.1.4"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -209,6 +223,27 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.7"
+  flutter_sound:
+    dependency: "direct main"
+    description:
+      name: flutter_sound
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "9.2.13"
+  flutter_sound_platform_interface:
+    dependency: transitive
+    description:
+      name: flutter_sound_platform_interface
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "9.2.13"
+  flutter_sound_web:
+    dependency: transitive
+    description:
+      name: flutter_sound_web
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "9.2.13"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -289,6 +324,27 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.6.4"
+  just_audio:
+    dependency: "direct main"
+    description:
+      name: just_audio
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.9.31"
+  just_audio_platform_interface:
+    dependency: transitive
+    description:
+      name: just_audio_platform_interface
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "4.2.0"
+  just_audio_web:
+    dependency: transitive
+    description:
+      name: just_audio_web
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.4.7"
   lints:
     dependency: transitive
     description:
@@ -296,6 +352,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.1"
+  logger:
+    dependency: transitive
+    description:
+      name: logger
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.2.2"
   matcher:
     dependency: transitive
     description:
@@ -464,6 +527,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "3.2.1"
+  recase:
+    dependency: transitive
+    description:
+      name: recase
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "4.1.0"
   record_mp3:
     dependency: "direct main"
     description:
@@ -518,6 +588,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.1.1"
+  synchronized:
+    dependency: transitive
+    description:
+      name: synchronized
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "3.0.1"
   tcp_socket_connection:
     dependency: "direct main"
     description:

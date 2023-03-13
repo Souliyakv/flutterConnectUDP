@@ -1,17 +1,21 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:demoudp/model/callingModel.dart';
 import 'package:demoudp/model/getImageModel.dart';
 import 'package:demoudp/model/imageModel.dart';
 import 'package:demoudp/model/typingStatusModel.dart';
+import 'package:demoudp/page/acceptCallPage.dart';
 import 'package:demoudp/providers/getImageProvider.dart';
 import 'package:demoudp/providers/imageProvider.dart';
 import 'package:demoudp/providers/statusTypingProvider.dart';
+import 'package:demoudp/providers/streamAudioProvider.dart';
 import 'package:demoudp/providers/textMessage_provider.dart';
 import 'package:demoudp/services/enoumDataService.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../model/connectSocketUDP_model.dart';
 import '../model/textMessage_model.dart';
+import '../page/calling.dart';
 import '../widget/config.dart';
 
 class ConnectSocketUDPProvider with ChangeNotifier {
@@ -22,7 +26,8 @@ class ConnectSocketUDPProvider with ChangeNotifier {
     var pvdGetImage = Provider.of<GetImageProvider>(context, listen: false);
     var provider = Provider.of<TextMessageProvider>(context, listen: false);
     var pvdImage = Provider.of<ChooseImageProvider>(context, listen: false);
-    RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 2222)
+    var pvdStream = Provider.of<StreamAudioProvider>(context, listen: false);
+    RawDatagramSocket.bind(InternetAddress.anyIPv4, 2222)
         .then((RawDatagramSocket socket) {
       this.socket = socket;
       this.socket.listen((event) {
@@ -30,7 +35,6 @@ class ConnectSocketUDPProvider with ChangeNotifier {
           Datagram? dg = this.socket.receive();
           List<int> result = dg!.data;
           data = utf8.decode(result);
-          // print(json.decode(data)['command']);
 
           switch (json.decode(data)['command']) {
             case "txtsend":
@@ -138,6 +142,37 @@ class ConnectSocketUDPProvider with ChangeNotifier {
               break;
             case "userlist":
               pvdGetImage.getuserlist(json.decode(data)['list']);
+              break;
+            case "requestCall":
+              Navigator.push(context, MaterialPageRoute(
+                builder: (context) {
+                  return AcceptCallingScreen(
+                      address: json.decode(data)['address'],
+                      channel: json.decode(data)['channel'],
+                      port: json.decode(data)['port'],
+                      sender: json.decode(data)['sender']);
+                },
+              ));
+              break;
+            case "calling":
+            // print(json.decode(data)['message']);
+              pvdStream.getBufferStream(json.decode(data)['message']);
+              break;
+            case "acceptCall":
+              Navigator.push(context, MaterialPageRoute(
+                builder: (context) {
+                  return Calling(
+                      address: json.decode(data)['address'],
+                      channel: json.decode(data)['channel'],
+                      port: json.decode(data)['port'],
+                      sender: json.decode(data)['sender']);
+                },
+              ));
+              break;
+
+            case "hangUpCall":
+              Navigator.pop(context);
+              Navigator.pop(context);
               break;
             default:
               PushBufferToImageModel pushBufferToImageModel =
@@ -364,6 +399,67 @@ class ConnectSocketUDPProvider with ChangeNotifier {
       "command": Ecommand().resend
     };
     this.socket.send(utf8.encode(jsonEncode(resendData)),
+        InternetAddress("${IpAddress().ipAddress}"), 2222);
+  }
+
+  requestCall(RequestCallModel requestCallModel) {
+    var requestCallData = {
+      'data': {
+        'channel': requestCallModel.channel,
+        'sender': requestCallModel.sender
+      },
+      'token': requestCallModel.sender,
+      'command': Ecommand().requestCall
+    };
+    socket.send(utf8.encode(jsonEncode(requestCallData)),
+        InternetAddress("${IpAddress().ipAddress}"), 2222);
+  }
+
+  appCalling(AppCallingModel appCallingModel) {
+    var appCallingData = {
+      'data': {
+        'address': appCallingModel.address,
+        'port': appCallingModel.port,
+        'message': appCallingModel.message
+      },
+      'command': Ecommand().calling
+    };
+    socket.send(utf8.encode(jsonEncode(appCallingData)),
+        InternetAddress("${IpAddress().ipAddress}"), 2222);
+  }
+
+  acceptCall(AcceptCallModel acceptCallModel, BuildContext context) {
+    var acceptCallData = {
+      'data': {
+        'address': acceptCallModel.address,
+        'port': acceptCallModel.port,
+        'sender': acceptCallModel.sender,
+        'channel': acceptCallModel.channel
+      },
+      'command': Ecommand().acceptCall
+    };
+    socket.send(utf8.encode(jsonEncode(acceptCallData)),
+        InternetAddress("${IpAddress().ipAddress}"), 2222);
+    Navigator.push(context, MaterialPageRoute(
+      builder: (context) {
+        return Calling(
+            address: acceptCallModel.address,
+            channel: acceptCallModel.channel,
+            port: acceptCallModel.port,
+            sender: acceptCallModel.sender);
+      },
+    ));
+  }
+
+  hangUpCall(HangUpCallModel hangUpCallModel) {
+    var hangUpCallData = {
+      'data': {
+        'address': hangUpCallModel.address,
+        'port': hangUpCallModel.port
+      },
+      'command': Ecommand().hangUpCall
+    };
+    socket.send(utf8.encode(jsonEncode(hangUpCallData)),
         InternetAddress("${IpAddress().ipAddress}"), 2222);
   }
 

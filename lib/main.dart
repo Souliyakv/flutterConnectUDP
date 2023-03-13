@@ -4,6 +4,7 @@ import 'package:demoudp/providers/connectSocketUDP_provider.dart';
 import 'package:demoudp/providers/getImageProvider.dart';
 import 'package:demoudp/providers/imageProvider.dart';
 import 'package:demoudp/providers/statusTypingProvider.dart';
+import 'package:demoudp/providers/streamAudioProvider.dart';
 import 'package:demoudp/providers/textMessage_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -53,6 +54,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) {
           return GetImageProvider();
         }),
+        ChangeNotifierProvider(create: (context) {
+          return StreamAudioProvider();
+        })
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

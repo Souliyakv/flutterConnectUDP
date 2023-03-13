@@ -163,7 +163,8 @@ class GetImageProvider with ChangeNotifier {
                       [1]
                   .toString(),
               type: detailDataImage[pushBufferToImageModel.trans.toString()][2]
-                  .toString(),long: 1);
+                  .toString(),
+              long: 1);
           provider.addTextMessage(textMessageModel);
         } else if (detailDataImage[pushBufferToImageModel.trans.toString()]
                 [2] ==

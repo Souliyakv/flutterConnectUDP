@@ -11,4 +11,8 @@ class Ecommand {
   String txtsend = "txtsend";
   String typingStatus = "typingStatus";
   String send = "send";
+  String requestCall = "requestCall";
+  String acceptCall = 'acceptCall';
+  String calling = "calling";
+  String hangUpCall = "hangUpCall";
 }

@@ -49,6 +49,9 @@ dependencies:
   record_mp3: ^3.0.0
   permission_handler: ^10.2.0
   flutter_local_notifications: ^13.0.0
+  flutter_audio_capture: ^1.1.4
+  just_audio: ^0.9.31
+  flutter_sound: ^9.2.13
 
 
 dev_dependencies:

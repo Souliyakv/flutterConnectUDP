@@ -127,8 +127,7 @@ class _RecodeAudioScreenState extends State<RecodeAudioScreen> {
               const SizedBox(
                 height: 25,
               ),
-              FloatingActionButton(
-                backgroundColor: Colors.white,
+              TextButton(
                 onPressed: () {
                   setState(() {
                     isRecode = !isRecode;
@@ -137,7 +136,7 @@ class _RecodeAudioScreenState extends State<RecodeAudioScreen> {
                 },
                 child: Icon(
                   isRecode ? Icons.pause : Icons.play_arrow,
-                  color: Colors.black,
+                  color: Colors.white,
                   size: 50,
                 ),
               )

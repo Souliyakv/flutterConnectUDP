@@ -59,6 +59,7 @@ class _RecodeAudioScreenState extends State<RecodeAudioScreen> {
 
   void stopRecord() {
     bool s = RecordMp3.instance.stop();
+
     if (s) {
       statusText = "Record complete";
       isComplete = true;
@@ -100,7 +101,7 @@ class _RecodeAudioScreenState extends State<RecodeAudioScreen> {
         setState(() {
           startTime = startTime + 1;
           recordingTime = '${startTime ~/ 60}:${startTime % 60}';
-          longTime = startTime - 1;
+          longTime = startTime;
         });
         if (!isRecode) {
           t.cancel();

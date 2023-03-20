@@ -7,15 +7,18 @@ class StreamAudioProvider with ChangeNotifier {
   FlutterSoundPlayer _soundPlayer = FlutterSoundPlayer();
   getBufferStream(var message) async {
     byte = message.cast<int>();
+    print(byte);
 
     await _soundPlayer.feedFromStream(Uint8List.fromList(byte));
+    _soundPlayer.foodSink!.add(FoodData(Uint8List.fromList(byte)));
 
     print("playin gstatus is :${_soundPlayer.isPlaying}");
   }
 
   startStream() async {
-    await _soundPlayer.openPlayer(enableVoiceProcessing: false);
-    await _soundPlayer.startPlayerFromStream();
+    await _soundPlayer.openPlayer(enableVoiceProcessing: true);
+    await _soundPlayer.startPlayerFromStream(
+        codec: Codec.pcm16, numChannels: 1, sampleRate: 48000);
 
     // _soundPlayer.openPlayer(enableVoiceProcessing: true);
     // await _soundPlayer.startPlayer(fromDataBuffer: Uint8List.fromList(byte));

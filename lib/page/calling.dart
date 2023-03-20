@@ -2,8 +2,10 @@ import 'dart:async';
 import 'package:demoudp/model/callingModel.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_audio_capture/flutter_audio_capture.dart';
 import 'package:flutter_sound/flutter_sound.dart';
+import 'package:flutter_voice_processor/flutter_voice_processor.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
@@ -28,45 +30,58 @@ class Calling extends StatefulWidget {
 }
 
 class _CallingState extends State<Calling> {
-  FlutterAudioCapture _plugin = new FlutterAudioCapture();
   final player = AudioPlayer();
   int chunkSize = 2205;
   String recordingTime = '';
   late List<int> byte = [];
   bool isRecode = true;
-  FlutterSoundRecorder _soundRecorder = FlutterSoundRecorder();
-  late Stream<Uint8List> _audioStream;
+  VoiceProcessor? _voiceProcessor;
+  Function? _removeListener;
+  Function? _errorListener;
 
   @override
   void initState() {
+    // TODO: implement initState
     super.initState();
-    // _startCapture();
-    _startCapture();
-    // player.setAudioSource(MyCustomSource(byte));
-    // player.play();
-    // recordTime();
+    _initVoiceProcessor();
+  }
+
+  void _initVoiceProcessor() async {
+    _voiceProcessor = VoiceProcessor.getVoiceProcessor(512, 16000);
+    _startProcessing();
   }
 
   void dispose() {
-    _plugin.stop();
+    _voiceProcessor!.stop();
     super.dispose();
   }
 
-  Future<void> _startCapture() async {
-    final status = await Permission.microphone.request();
-    if (status != PermissionStatus.granted) {
-      throw "Microphone permission not granted";
-    }
-    print('start');
-    await _plugin.start(listener, onError, sampleRate: 16000, bufferSize: 3000);
-    var pvdStream = Provider.of<StreamAudioProvider>(context, listen: false);
-    pvdStream.startStream();
+  Future<void> _startProcessing() async {
+    _removeListener = _voiceProcessor?.addListener(_onBufferReceived);
+    _errorListener = _voiceProcessor?.addErrorListener(_onErrorReceived);
+    try {
+      if (await _voiceProcessor?.hasRecordAudioPermission() ?? false) {
+        await _voiceProcessor?.start();
+      } else {
+        print("Recording permission not granted");
+      }
+    } on PlatformException catch (ex) {
+      print("Failed to start recorder: " + ex.toString());
+    } finally {}
   }
 
-  Future<void> stopCapture() async {
-    Navigator.pop(context);
-    await _plugin.stop();
-    Navigator.pop(context);
+  void _onBufferReceived(dynamic eventData) {
+    var pvdConnect =
+        Provider.of<ConnectSocketUDPProvider>(context, listen: false);
+    print("Listener 1 received buffer of size ${eventData}!");
+    AppCallingModel appCallingModel = AppCallingModel(
+        address: widget.address, message: eventData, port: widget.port);
+    pvdConnect.appCalling(appCallingModel);
+  }
+
+  void _onErrorReceived(dynamic eventData) {
+    String errorMsg = eventData as String;
+    print(errorMsg);
   }
 
   void listener(dynamic obj) {
@@ -76,19 +91,18 @@ class _CallingState extends State<Calling> {
     var buffer = Float64List.fromList(obj.cast<double>());
     // List<Float64List> sperate = [];
     // for (var i = 0; i < buffer.length; i++) {
-    //   int end = i + 2205 < buffer.length ? i + 2202 : buffer.length;
-    //   sperate.add(buffer.sublist(i, end));
-    // }'
+    //   int end = i + 200 < buffer.length ? i + 200 : buffer.length;
+    // sperate.add(buffer.sublist(i, end));
     AppCallingModel appCallingModel = AppCallingModel(
-        address: widget.address, message: buffer, port: widget.port);
+        address: widget.address,
+        message: buffer.sublist(0, 500),
+        port: widget.port);
     pvdConnect.appCalling(appCallingModel);
+    // }
+
     // AppCallingModel appCallingModel = AppCallingModel(
     //     address: widget.address, message: buffer, port: widget.port);
     // pvdConnect.appCalling(appCallingModel);
-  }
-
-  void onError(Object e) {
-    print(e);
   }
 
 //   Future<void> startRecording() async {
@@ -168,7 +182,6 @@ class _CallingState extends State<Calling> {
                     HangUpCallModel hangUpCallModel = HangUpCallModel(
                         address: widget.address, port: widget.port);
                     pvdConnect.hangUpCall(hangUpCallModel);
-                    stopCapture();
                   },
                   child: Icon(Icons.call_end),
                 ),

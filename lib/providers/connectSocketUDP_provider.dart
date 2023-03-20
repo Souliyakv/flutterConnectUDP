@@ -144,6 +144,7 @@ class ConnectSocketUDPProvider with ChangeNotifier {
               pvdGetImage.getuserlist(json.decode(data)['list']);
               break;
             case "requestCall":
+              print("req");
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) {
                   return AcceptCallingScreen(
@@ -155,7 +156,8 @@ class ConnectSocketUDPProvider with ChangeNotifier {
               ));
               break;
             case "calling":
-            // print(json.decode(data)['message']);
+        
+              // print(json.decode(data)['message']);
               pvdStream.getBufferStream(json.decode(data)['message']);
               break;
             case "acceptCall":

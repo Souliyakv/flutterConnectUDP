@@ -52,6 +52,7 @@ dependencies:
   flutter_audio_capture: ^1.1.4
   just_audio: ^0.9.31
   flutter_sound: ^9.2.13
+  flutter_voice_processor: ^1.0.9
 
 
 dev_dependencies:

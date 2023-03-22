@@ -9,8 +9,8 @@ class StreamAudioProvider with ChangeNotifier {
     byte = message.cast<int>();
     print(byte);
 
-    await _soundPlayer.feedFromStream(Uint8List.fromList(byte));
-    _soundPlayer.foodSink!.add(FoodData(Uint8List.fromList(byte)));
+    // await _soundPlayer.feedFromStream(Uint8List.fromList(byte));
+    // _soundPlayer.foodSink!.add(FoodData(Uint8List.fromList(byte)));
 
     print("playin gstatus is :${_soundPlayer.isPlaying}");
   }
@@ -18,7 +18,7 @@ class StreamAudioProvider with ChangeNotifier {
   startStream() async {
     await _soundPlayer.openPlayer(enableVoiceProcessing: true);
     await _soundPlayer.startPlayerFromStream(
-        codec: Codec.pcm16, numChannels: 1, sampleRate: 48000);
+        codec: Codec.pcm16, numChannels: 1, sampleRate: 16000);
 
     // _soundPlayer.openPlayer(enableVoiceProcessing: true);
     // await _soundPlayer.startPlayer(fromDataBuffer: Uint8List.fromList(byte));

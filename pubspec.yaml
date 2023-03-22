@@ -54,7 +54,6 @@ dependencies:
   flutter_sound: ^9.2.13
   flutter_voice_processor: ^1.0.9
 
-
 dev_dependencies:
   flutter_test:
     sdk: flutter

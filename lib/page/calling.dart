@@ -3,15 +3,10 @@ import 'package:demoudp/model/callingModel.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_audio_capture/flutter_audio_capture.dart';
-import 'package:flutter_sound/flutter_sound.dart';
 import 'package:flutter_voice_processor/flutter_voice_processor.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-
 import '../providers/connectSocketUDP_provider.dart';
-import '../providers/streamAudioProvider.dart';
 
 class Calling extends StatefulWidget {
   final String channel;
@@ -73,7 +68,7 @@ class _CallingState extends State<Calling> {
   void _onBufferReceived(dynamic eventData) {
     var pvdConnect =
         Provider.of<ConnectSocketUDPProvider>(context, listen: false);
-    print("Listener 1 received buffer of size ${eventData}!");
+    // print("Listener 1 received buffer of size ${eventData}!");
     AppCallingModel appCallingModel = AppCallingModel(
         address: widget.address, message: eventData, port: widget.port);
     pvdConnect.appCalling(appCallingModel);
@@ -182,6 +177,8 @@ class _CallingState extends State<Calling> {
                     HangUpCallModel hangUpCallModel = HangUpCallModel(
                         address: widget.address, port: widget.port);
                     pvdConnect.hangUpCall(hangUpCallModel);
+                    Navigator.pop(context);
+                    Navigator.pop(context);
                   },
                   child: Icon(Icons.call_end),
                 ),

@@ -5,10 +5,10 @@ import 'package:demoudp/model/getImageModel.dart';
 import 'package:demoudp/model/imageModel.dart';
 import 'package:demoudp/model/typingStatusModel.dart';
 import 'package:demoudp/page/acceptCallPage.dart';
+import 'package:demoudp/providers/call_provider.dart';
 import 'package:demoudp/providers/getImageProvider.dart';
 import 'package:demoudp/providers/imageProvider.dart';
 import 'package:demoudp/providers/statusTypingProvider.dart';
-import 'package:demoudp/providers/streamAudioProvider.dart';
 import 'package:demoudp/providers/textMessage_provider.dart';
 import 'package:demoudp/services/enoumDataService.dart';
 import 'package:flutter/material.dart';
@@ -26,8 +26,13 @@ class ConnectSocketUDPProvider with ChangeNotifier {
     var pvdGetImage = Provider.of<GetImageProvider>(context, listen: false);
     var provider = Provider.of<TextMessageProvider>(context, listen: false);
     var pvdImage = Provider.of<ChooseImageProvider>(context, listen: false);
-    var pvdStream = Provider.of<StreamAudioProvider>(context, listen: false);
-    RawDatagramSocket.bind(InternetAddress.anyIPv4, 2222)
+    // var pvdStream = Provider.of<StreamAudioProvider>(context, listen: false);
+    var pvdCallStream = Provider.of<CallProvider>(context, listen: false);
+    RawDatagramSocket.bind(
+            Platform.isAndroid
+                ? InternetAddress.anyIPv4
+                : InternetAddress.loopbackIPv4,
+            2222)
         .then((RawDatagramSocket socket) {
       this.socket = socket;
       this.socket.listen((event) {
@@ -144,6 +149,7 @@ class ConnectSocketUDPProvider with ChangeNotifier {
               pvdGetImage.getuserlist(json.decode(data)['list']);
               break;
             case "requestCall":
+              pvdCallStream.initData();
               print("req");
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) {
@@ -156,11 +162,14 @@ class ConnectSocketUDPProvider with ChangeNotifier {
               ));
               break;
             case "calling":
-        
+
               // print(json.decode(data)['message']);
-              pvdStream.getBufferStream(json.decode(data)['message']);
+              // pvdStream.getBufferStream(json.decode(data)['message']);
+              pvdCallStream.getBuffer(json.decode(data)['message']);
               break;
             case "acceptCall":
+              pvdCallStream.record(context, json.decode(data)['address'],
+                  json.decode(data)['port']);
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) {
                   return Calling(
@@ -173,6 +182,8 @@ class ConnectSocketUDPProvider with ChangeNotifier {
               break;
 
             case "hangUpCall":
+              pvdCallStream.stopRecorder();
+              // pvdCallStream.play();
               Navigator.pop(context);
               Navigator.pop(context);
               break;

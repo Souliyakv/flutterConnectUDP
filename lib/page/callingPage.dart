@@ -1,8 +1,6 @@
 import 'package:demoudp/model/callingModel.dart';
 import 'package:demoudp/providers/connectSocketUDP_provider.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_audio_capture/flutter_audio_capture.dart';
 import 'package:provider/provider.dart';
 
 class CallingScreen extends StatefulWidget {
@@ -15,7 +13,6 @@ class CallingScreen extends StatefulWidget {
 }
 
 class _CallingScreenState extends State<CallingScreen> {
-  FlutterAudioCapture _plugin = new FlutterAudioCapture();
 
   @override
   void initState() {
@@ -23,8 +20,6 @@ class _CallingScreenState extends State<CallingScreen> {
     // _startCapture();
     startRequest(context);
   }
-
-  
 
   void startRequest(BuildContext context) {
     var pvdConnect =
@@ -34,24 +29,24 @@ class _CallingScreenState extends State<CallingScreen> {
     pvdConnect.requestCall(requestCallModel);
   }
 
-  Future<void> _startCapture() async {
-    print('start');
-    await _plugin.start(listener, onError, sampleRate: 16000, bufferSize: 3000);
-  }
+  // Future<void> _startCapture() async {
+  //   print('start');
+  //   await _plugin.start(listener, onError, sampleRate: 16000, bufferSize: 3000);
+  // }
 
-  Future<void> _stopCapture() async {
-    await _plugin.stop();
-  }
+  // Future<void> _stopCapture() async {
+  //   await _plugin.stop();
+  // }
 
-  void listener(dynamic obj) {
-    var buffer = Float64List.fromList(obj.cast<double>());
-    print(buffer);
-    print('object');
-  }
+  // void listener(dynamic obj) {
+  //   var buffer = Float64List.fromList(obj.cast<double>());
+  //   print(buffer);
+  //   print('object');
+  // }
 
-  void onError(Object e) {
-    print(e);
-  }
+  // void onError(Object e) {
+  //   print(e);
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +91,7 @@ class _CallingScreenState extends State<CallingScreen> {
                 child: FloatingActionButton(
                   backgroundColor: Colors.red,
                   onPressed: () {
-                    _stopCapture();
+                    // _stopCapture();
                     Navigator.pop(context);
                   },
                   child: Icon(Icons.call_end),

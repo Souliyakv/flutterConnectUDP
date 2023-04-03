@@ -53,6 +53,12 @@ dependencies:
   just_audio: ^0.9.31
   flutter_sound: ^9.2.13
   flutter_voice_processor: ^1.0.9
+  flutter_tts: ^3.6.3
+  microphone: ^0.1.0
+  mic_stream: ^0.6.4
+  audioplayers: ^0.20.1
+  flutter_webrtc: ^0.9.24
+  audio_session: ^0.1.13
 
 dev_dependencies:
   flutter_test:

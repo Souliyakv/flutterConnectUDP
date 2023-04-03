@@ -10,6 +10,7 @@ import 'package:demoudp/page/checkAudio.dart';
 import 'package:demoudp/page/checkVideo.dart';
 import 'package:demoudp/page/playVideo.dart';
 import 'package:demoudp/page/recodeAudio.dart';
+import 'package:demoudp/providers/call_provider.dart';
 import 'package:demoudp/providers/connectSocketUDP_provider.dart';
 import 'package:demoudp/providers/imageProvider.dart';
 import 'package:demoudp/providers/statusTypingProvider.dart';
@@ -142,7 +143,7 @@ class _ChatPageState extends State<ChatPage> {
                     borderRadius: BorderRadius.circular(15),
                     image: const DecorationImage(
                         image: NetworkImage(
-                            "https://upload.wikimedia.org/wikipedia/commons/7/7a/Siri_Logo_in_2022.png"),
+                            "https://www.apple.com/v/siri/f/images/meta/siri__fsb5b98qe526_og.png?202207261927"),
                         fit: BoxFit.cover)),
               ),
             ],
@@ -208,7 +209,10 @@ class _ChatPageState extends State<ChatPage> {
             ),
             IconButton(
                 onPressed: () {
-                  checkVideo();
+                  // checkVideo();
+                  var pvdCallStream =
+                      Provider.of<CallProvider>(context, listen: false);
+                  pvdCallStream.play([]);
                 },
                 icon: const Icon(Icons.video_camera_back)),
             IconButton(
@@ -223,13 +227,16 @@ class _ChatPageState extends State<ChatPage> {
                 icon: const Icon(Icons.record_voice_over_sharp)),
             IconButton(
                 onPressed: () {
+                  var pvdCallStream =
+                      Provider.of<CallProvider>(context, listen: false);
+                  pvdCallStream.initData();
                   Navigator.push(context, MaterialPageRoute(
                     builder: (context) {
                       return CallingScreen(channel: _to, sender: _username);
                     },
                   ));
                 },
-                icon: const Icon(Icons.call))
+                icon: const Icon(Icons.call)),
           ],
         ),
         bottomSheet: Container(

@@ -1,5 +1,10 @@
 import 'package:demoudp/page/loginPage.dart';
 import 'package:demoudp/page/testAudio.dart';
+import 'package:demoudp/page/testData.dart';
+import 'package:demoudp/page/testSoundData.dart';
+import 'package:demoudp/page/testWebrtc.dart';
+import 'package:demoudp/page/tstData.dart';
+import 'package:demoudp/providers/call_provider.dart';
 import 'package:demoudp/providers/connectSocketUDP_provider.dart';
 import 'package:demoudp/providers/getImageProvider.dart';
 import 'package:demoudp/providers/imageProvider.dart';
@@ -56,12 +61,15 @@ class MyApp extends StatelessWidget {
         }),
         ChangeNotifierProvider(create: (context) {
           return StreamAudioProvider();
+        }),
+        ChangeNotifierProvider(create: (context) {
+          return CallProvider();
         })
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: ThemeData(primarySwatch: Colors.blue),
-        home:  LoginPage(),
+        home: LoginPage(),
       ),
     );
   }

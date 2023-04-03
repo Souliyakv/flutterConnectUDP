@@ -1,10 +1,7 @@
 import 'dart:async';
 import 'package:demoudp/model/callingModel.dart';
-import 'package:flutter/foundation.dart';
+import 'package:demoudp/providers/call_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_voice_processor/flutter_voice_processor.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 import '../providers/connectSocketUDP_provider.dart';
 
@@ -25,93 +22,8 @@ class Calling extends StatefulWidget {
 }
 
 class _CallingState extends State<Calling> {
-  final player = AudioPlayer();
-  int chunkSize = 2205;
   String recordingTime = '';
-  late List<int> byte = [];
   bool isRecode = true;
-  VoiceProcessor? _voiceProcessor;
-  Function? _removeListener;
-  Function? _errorListener;
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    _initVoiceProcessor();
-  }
-
-  void _initVoiceProcessor() async {
-    _voiceProcessor = VoiceProcessor.getVoiceProcessor(512, 16000);
-    _startProcessing();
-  }
-
-  void dispose() {
-    _voiceProcessor!.stop();
-    super.dispose();
-  }
-
-  Future<void> _startProcessing() async {
-    _removeListener = _voiceProcessor?.addListener(_onBufferReceived);
-    _errorListener = _voiceProcessor?.addErrorListener(_onErrorReceived);
-    try {
-      if (await _voiceProcessor?.hasRecordAudioPermission() ?? false) {
-        await _voiceProcessor?.start();
-      } else {
-        print("Recording permission not granted");
-      }
-    } on PlatformException catch (ex) {
-      print("Failed to start recorder: " + ex.toString());
-    } finally {}
-  }
-
-  void _onBufferReceived(dynamic eventData) {
-    var pvdConnect =
-        Provider.of<ConnectSocketUDPProvider>(context, listen: false);
-    // print("Listener 1 received buffer of size ${eventData}!");
-    AppCallingModel appCallingModel = AppCallingModel(
-        address: widget.address, message: eventData, port: widget.port);
-    pvdConnect.appCalling(appCallingModel);
-  }
-
-  void _onErrorReceived(dynamic eventData) {
-    String errorMsg = eventData as String;
-    print(errorMsg);
-  }
-
-  void listener(dynamic obj) {
-    var pvdConnect =
-        Provider.of<ConnectSocketUDPProvider>(context, listen: false);
-
-    var buffer = Float64List.fromList(obj.cast<double>());
-    // List<Float64List> sperate = [];
-    // for (var i = 0; i < buffer.length; i++) {
-    //   int end = i + 200 < buffer.length ? i + 200 : buffer.length;
-    // sperate.add(buffer.sublist(i, end));
-    AppCallingModel appCallingModel = AppCallingModel(
-        address: widget.address,
-        message: buffer.sublist(0, 500),
-        port: widget.port);
-    pvdConnect.appCalling(appCallingModel);
-    // }
-
-    // AppCallingModel appCallingModel = AppCallingModel(
-    //     address: widget.address, message: buffer, port: widget.port);
-    // pvdConnect.appCalling(appCallingModel);
-  }
-
-//   Future<void> startRecording() async {
-//     PermissionStatus status = await Permission.microphone.request();
-//     if (status != PermissionStatus.granted)
-//             throw RecordingPermissionException("Microphone permission not granted");
-
-//   // await _soundRecorder.openAudioSession();
-//   await _soundRecorder.startRecorder(toStream: true,);
-//   _audioStream = _soundRecorder.
-//   _audioStream = _soundRecorder.onRecorderStateChanged.map(
-//     (e) => e.buffer.asUint8List(e.buffer.lengthInBytes),
-//   );
-// }
 
   void recordTime() {
     int startTime = 0;
@@ -143,7 +55,7 @@ class _CallingState extends State<Calling> {
             child: Column(
               children: [
                 Text(
-                  '${widget.channel}',
+                  'a',
                   style: TextStyle(color: Colors.white, fontSize: 30),
                 ),
                 Text(
@@ -171,12 +83,16 @@ class _CallingState extends State<Calling> {
                 child: FloatingActionButton(
                   backgroundColor: Colors.red,
                   onPressed: () {
+                    var pvdCallStream =
+                        Provider.of<CallProvider>(context, listen: false);
                     var pvdConnect = Provider.of<ConnectSocketUDPProvider>(
                         context,
                         listen: false);
                     HangUpCallModel hangUpCallModel = HangUpCallModel(
                         address: widget.address, port: widget.port);
                     pvdConnect.hangUpCall(hangUpCallModel);
+                    pvdCallStream.stopRecorder();
+                    // pvdCallStream.play();
                     Navigator.pop(context);
                     Navigator.pop(context);
                   },

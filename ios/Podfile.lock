@@ -5,6 +5,8 @@ PODS:
     - Flutter
   - audio_session (0.0.1):
     - Flutter
+  - audioplayers (0.0.1):
+    - Flutter
   - camera_avfoundation (0.0.1):
     - Flutter
   - DKImagePickerController/Core (4.3.4):
@@ -50,11 +52,18 @@ PODS:
     - Flutter
     - flutter_sound_core (= 9.2.13)
   - flutter_sound_core (9.2.13)
+  - flutter_tts (0.0.1):
+    - Flutter
   - flutter_voice_processor (1.0.6):
     - Flutter
+  - flutter_webrtc (0.9.20):
+    - Flutter
+    - WebRTC-SDK (= 104.5112.09)
   - image_picker_ios (0.0.1):
     - Flutter
   - just_audio (0.0.1):
+    - Flutter
+  - mic_stream (0.0.1):
     - Flutter
   - path_provider_foundation (0.0.1):
     - Flutter
@@ -69,20 +78,25 @@ PODS:
   - SwiftyGif (5.4.4)
   - video_player_avfoundation (0.0.1):
     - Flutter
+  - WebRTC-SDK (104.5112.09)
 
 DEPENDENCIES:
   - assets_audio_player (from `.symlinks/plugins/assets_audio_player/ios`)
   - assets_audio_player_web (from `.symlinks/plugins/assets_audio_player_web/ios`)
   - audio_session (from `.symlinks/plugins/audio_session/ios`)
+  - audioplayers (from `.symlinks/plugins/audioplayers/ios`)
   - camera_avfoundation (from `.symlinks/plugins/camera_avfoundation/ios`)
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - Flutter (from `Flutter`)
   - flutter_audio_capture (from `.symlinks/plugins/flutter_audio_capture/ios`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - flutter_sound (from `.symlinks/plugins/flutter_sound/ios`)
+  - flutter_tts (from `.symlinks/plugins/flutter_tts/ios`)
   - flutter_voice_processor (from `.symlinks/plugins/flutter_voice_processor/ios`)
+  - flutter_webrtc (from `.symlinks/plugins/flutter_webrtc/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - just_audio (from `.symlinks/plugins/just_audio/ios`)
+  - mic_stream (from `.symlinks/plugins/mic_stream/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/ios`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - record_mp3 (from `.symlinks/plugins/record_mp3/ios`)
@@ -95,6 +109,7 @@ SPEC REPOS:
     - flutter_sound_core
     - SDWebImage
     - SwiftyGif
+    - WebRTC-SDK
 
 EXTERNAL SOURCES:
   assets_audio_player:
@@ -103,6 +118,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/assets_audio_player_web/ios"
   audio_session:
     :path: ".symlinks/plugins/audio_session/ios"
+  audioplayers:
+    :path: ".symlinks/plugins/audioplayers/ios"
   camera_avfoundation:
     :path: ".symlinks/plugins/camera_avfoundation/ios"
   file_picker:
@@ -115,12 +132,18 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/flutter_local_notifications/ios"
   flutter_sound:
     :path: ".symlinks/plugins/flutter_sound/ios"
+  flutter_tts:
+    :path: ".symlinks/plugins/flutter_tts/ios"
   flutter_voice_processor:
     :path: ".symlinks/plugins/flutter_voice_processor/ios"
+  flutter_webrtc:
+    :path: ".symlinks/plugins/flutter_webrtc/ios"
   image_picker_ios:
     :path: ".symlinks/plugins/image_picker_ios/ios"
   just_audio:
     :path: ".symlinks/plugins/just_audio/ios"
+  mic_stream:
+    :path: ".symlinks/plugins/mic_stream/ios"
   path_provider_foundation:
     :path: ".symlinks/plugins/path_provider_foundation/ios"
   permission_handler_apple:
@@ -134,6 +157,7 @@ SPEC CHECKSUMS:
   assets_audio_player: edee322b9cb625571b830b35872ead1a295fd917
   assets_audio_player_web: 19826380c44375761aa0b9053665c1e3fbc3b86b
   audio_session: 4f3e461722055d21515cf3261b64c973c062f345
+  audioplayers: 455322b54050b30ea4b1af7cd9e9d105f74efa8c
   camera_avfoundation: 3125e8cd1a4387f6f31c6c63abb8a55892a9eeeb
   DKImagePickerController: b512c28220a2b8ac7419f21c491fc8534b7601ac
   DKPhotoGallery: fdfad5125a9fdda9cc57df834d49df790dbb4179
@@ -143,15 +167,19 @@ SPEC CHECKSUMS:
   flutter_local_notifications: 0c0b1ae97e741e1521e4c1629a459d04b9aec743
   flutter_sound: c60effa2a350fb977885f0db2fbc4c1ad5160900
   flutter_sound_core: 26c10e5832e76aaacfae252d8925232281c486ae
+  flutter_tts: 0f492aab6accf87059b72354fcb4ba934304771d
   flutter_voice_processor: afb59b604d99397a1ccf15c935ac8f2c2327f09f
+  flutter_webrtc: 15c5fb4ea324f3178ff97c0f02b9467b85977e42
   image_picker_ios: b786a5dcf033a8336a657191401bfdf12017dabb
   just_audio: baa7252489dbcf47a4c7cc9ca663e9661c99aafa
+  mic_stream: 9e7c9fe19d0d8bd0d273bd5428bbd13cab6f4429
   path_provider_foundation: 37748e03f12783f9de2cb2c4eadfaa25fe6d4852
   permission_handler_apple: 44366e37eaf29454a1e7b1b7d736c2cceaeb17ce
   record_mp3: b842d3900f65a0707e4064d9bcfac6323dea0b4f
   SDWebImage: fd7e1a22f00303e058058278639bf6196ee431fe
   SwiftyGif: 93a1cc87bf3a51916001cf8f3d63835fb64c819f
   video_player_avfoundation: 6d971a232d72e6ee25368378d48a079dea01f1cf
+  WebRTC-SDK: 3fa5c6fa717314fade68bffed85737484a28ad0b
 
 PODFILE CHECKSUM: f45e66682fc4357734a9cf1e925d2f32617716e1
 

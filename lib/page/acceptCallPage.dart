@@ -1,4 +1,5 @@
 import 'package:demoudp/model/callingModel.dart';
+import 'package:demoudp/providers/call_provider.dart';
 import 'package:demoudp/providers/connectSocketUDP_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -81,6 +82,8 @@ class _AcceptCallingScreenState extends State<AcceptCallingScreen> {
   }
 
   void accept() {
+    var pvdCallStream = Provider.of<CallProvider>(context, listen: false);
+    pvdCallStream.record(context, widget.address, widget.port);
     var pvdConnect =
         Provider.of<ConnectSocketUDPProvider>(context, listen: false);
     AcceptCallModel acceptCallModel = AcceptCallModel(
